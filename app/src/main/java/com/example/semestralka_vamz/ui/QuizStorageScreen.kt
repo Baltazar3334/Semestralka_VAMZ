@@ -1,4 +1,4 @@
-
+package com.example.semestralka_vamz.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.semestralka_vamz.BottomNavigationBar
 
 @Composable
 fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit) {
@@ -31,11 +30,20 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .padding(
+                top = 25.dp,
+                bottom = 16.dp,
+                start = 16.dp,
+                end = 16.dp),
     ) {
         QuizSection(title = "Basic", quizzes = listOf("QUIZ1", "QUIZ2"))
         QuizSection(title = "Flash Cards", quizzes = listOf("Flash cards 1", "Flash cards 2"))
         Spacer(modifier = Modifier.weight(1f))
-        BottomNavigationBar(onEditClick = onEditClick, onHomeClick = onHomeClick, onStorageClick = onStorageClick)
+        BottomNavigationBar(
+            onEditClick = onEditClick,
+            onHomeClick = onHomeClick,
+            onStorageClick = onStorageClick
+        )
     }
 }
 

@@ -1,7 +1,5 @@
-package com.example.semestralka_vamz
+package com.example.semestralka_vamz.ui
 
-import CreateQuizScreen
-import QuizStorageScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -47,7 +45,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.semestralka_vamz.ui.theme.Semestralka_VAMZTheme
+import com.example.semestralka_vamz.R
 
 val mainFont = FontFamily(
     Font(R.font.lato_black)
@@ -63,27 +61,26 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Semestralka_VAMZTheme {
-                var currentScreen by remember { mutableStateOf("menu") }
+            var currentScreen by remember { mutableStateOf("menu") }
 
-                when (currentScreen) {
-                    "menu" -> MenuScreen(
-                        onEditClick = { currentScreen = "createQuiz" },
-                        onHomeClick = { currentScreen = "menu" },
-                        onStorageClick = {currentScreen = "storage"}
-                    )
-                    "createQuiz" -> CreateQuizScreen(
-                        onHomeClick = { currentScreen = "menu" },
-                        onEditClick = { currentScreen = "createQuiz" },
-                        onStorageClick = {currentScreen = "storage"}
-                    )
-                    "storage" -> QuizStorageScreen(
-                        onHomeClick = { currentScreen = "menu" },
-                        onEditClick = { currentScreen = "createQuiz" },
-                        onStorageClick = { currentScreen = "storage" }
-                    )
-                }
+            when (currentScreen) {
+                "menu" -> MenuScreen(
+                    onEditClick = { currentScreen = "createQuiz" },
+                    onHomeClick = { currentScreen = "menu" },
+                    onStorageClick = {currentScreen = "storage"}
+                )
+                "createQuiz" -> CreateQuizScreen(
+                    onHomeClick = { currentScreen = "menu" },
+                    onEditClick = { currentScreen = "createQuiz" },
+                    onStorageClick = { currentScreen = "storage" }
+                )
+                "storage" -> QuizStorageScreen(
+                    onHomeClick = { currentScreen = "menu" },
+                    onEditClick = { currentScreen = "createQuiz" },
+                    onStorageClick = { currentScreen = "storage" }
+                )
             }
+
         }
     }
 }
