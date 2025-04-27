@@ -41,34 +41,37 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.semestralka_vamz.data.database.AppDatabase
 import com.example.semestralka_vamz.data.database.Repository.QuestionRepository
 import com.example.semestralka_vamz.data.database.Repository.QuizRepository
 import com.example.semestralka_vamz.data.database.entity.Question
 import com.example.semestralka_vamz.data.database.entity.Quiz
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit) {
-    var questions by remember { mutableStateOf(listOf("Otázka 1")) }
     var quizName by remember { mutableStateOf("") }
     var timeLimit by remember { mutableStateOf(0f) }
     val keyboardController = LocalSoftwareKeyboardController.current
     var isTimeLimitEnabled by remember { mutableStateOf(false) }
     val questions2 = remember { mutableStateListOf<QuestionData>() }
 
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context) // Získajte inštanciu databázy
+    val quizRepository = QuizRepository(db.quizDao())
+    val questionRepository = QuestionRepository(db.questionDao())
+
     BackHandler {
         onHomeClick()
     }
-
-    fun removeQuestion(index: Int) {
-        questions = questions.toMutableList().apply {
-            removeAt(index)
-        }
-    }
-
 
     Box(
         modifier = Modifier
@@ -139,8 +142,7 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
                 ) {
                     Row(
                         modifier = Modifier.padding(2.dp)
-                    )
-                    {
+                    ) {
                         Box(
                             modifier = Modifier
                                 .height(48.dp)
@@ -156,14 +158,17 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
                                 }) {
                                     Icon(Icons.Default.Add, contentDescription = "Add question")
                                 }
-
                                 Text(
                                     "Pridať Otázku",
                                     modifier = Modifier.weight(1f),
                                     textAlign = TextAlign.Start
                                 )
-
-                                IconButton(onClick = {  }) {
+                                IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch {
+                                    saveQuizAndQuestions(
+                                        quizName, timeLimit, isTimeLimitEnabled,
+                                        questions2, quizRepository, questionRepository
+                                    )
+                                } } ) {
                                     Icon(Icons.Default.Send, contentDescription = "Finish quiz")
                                 }
                             }
@@ -204,8 +209,6 @@ fun QuestionItem(
     var isExpanded by remember { mutableStateOf(false) }
 
     if (!isExpanded) {
-
-
         Card(
             modifier = Modifier.
             fillMaxWidth()
@@ -229,8 +232,6 @@ fun QuestionItem(
             }
         }
     } else {
-
-
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -256,7 +257,6 @@ fun QuestionItem(
                             .clickable { keyboardController?.show() }
                     )
                 }
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
@@ -272,7 +272,6 @@ fun QuestionItem(
                             .clickable { keyboardController?.show() }
                     )
                 }
-
                 data.answers.forEachIndexed { index, answer ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -293,7 +292,6 @@ fun QuestionItem(
                         )
                     }
                 }
-
                 IconButton(onClick = {
                     data.answers.add("")
                 }) {
