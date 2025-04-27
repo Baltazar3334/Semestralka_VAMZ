@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Send
@@ -65,7 +66,7 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
     val questions2 = remember { mutableStateListOf<QuestionData>() }
 
     val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context) // Získajte inštanciu databázy
+    val db = AppDatabase.getDatabase(context)
     val quizRepository = QuizRepository(db.quizDao())
     val questionRepository = QuestionRepository(db.questionDao())
 
@@ -292,11 +293,27 @@ fun QuestionItem(
                         )
                     }
                 }
-                IconButton(onClick = {
-                    data.answers.add("")
-                }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add answer")
+                Row(
+
+                ){
+                    IconButton(onClick = {
+                        if (data.answers.size < 3){
+                            data.answers.add("")
+                        } else {
+
+                        }
+                    } ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add answer")
+                    }
+                    IconButton(onClick = {
+                        if (data.answers.size >= 1){
+                            data.answers.removeAt(data.answers.lastIndex)
+                        }
+                    } ) {
+                        Icon(Icons.Default.Delete, contentDescription = "delete answer")
+                    }
                 }
+
             }
         }
     }

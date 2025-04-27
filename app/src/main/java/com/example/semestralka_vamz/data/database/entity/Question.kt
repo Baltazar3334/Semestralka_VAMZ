@@ -1,12 +1,10 @@
 package com.example.semestralka_vamz.data.database.entity
 
 import androidx.room.ColumnInfo
-import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import androidx.room.Relation
 
 @Entity(
     tableName = "question_table",
@@ -30,11 +28,3 @@ data class Question(
     @ColumnInfo(name = "answer3") val answer3: String?,
 )
 
-data class QuizWithQuestions(
-    @Embedded val quiz: Quiz,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "quizId"
-    )
-    val questions: List<Question>
-)
