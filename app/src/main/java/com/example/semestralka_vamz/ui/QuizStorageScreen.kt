@@ -1,4 +1,5 @@
 package com.example.semestralka_vamz.ui
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+
+
 @Composable
 fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit) {
     Column(
@@ -45,6 +48,11 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
             onStorageClick = onStorageClick
         )
     }
+
+    BackHandler {
+        onHomeClick()
+    }
+
 }
 
 @Composable

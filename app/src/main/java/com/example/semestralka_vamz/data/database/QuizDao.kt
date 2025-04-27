@@ -3,22 +3,24 @@ package com.example.semestralka_vamz.data.database
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.Query
+import androidx.room.OnConflictStrategy
 import androidx.room.Update
 import com.example.semestralka_vamz.data.database.entity.Quiz
 
 @Dao
 interface QuizDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(quiz: Quiz)
 
-    @Update
+    @Update(onConflict = OnConflictStrategy.ABORT)
     suspend fun update(quiz: Quiz)
 
     @Delete
     suspend fun delete(quiz: Quiz)
 
-    @Query("SELECT * FROM quiz_table")
-    suspend fun getAllQuizzes(): List<Quiz>
+    @Insert
+    suspend fun insertAndReturnId(quiz: Quiz): Long
+
+
 }

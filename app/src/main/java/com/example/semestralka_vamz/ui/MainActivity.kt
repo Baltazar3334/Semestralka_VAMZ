@@ -24,11 +24,13 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +64,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             var currentScreen by remember { mutableStateOf("menu") }
+            var showExitDialog by remember { mutableStateOf(false) }
 
             when (currentScreen) {
                 "menu" -> MenuScreen(
@@ -70,7 +73,7 @@ class MainActivity : ComponentActivity() {
                     onStorageClick = {currentScreen = "storage"}
                 )
                 "createQuiz" -> CreateQuizScreen(
-                    onHomeClick = { currentScreen = "menu" },
+                    onHomeClick = { showExitDialog = true },
                     onEditClick = { currentScreen = "createQuiz" },
                     onStorageClick = { currentScreen = "storage" }
                 )
@@ -80,7 +83,15 @@ class MainActivity : ComponentActivity() {
                     onStorageClick = { currentScreen = "storage" }
                 )
             }
-
+            if (showExitDialog) {
+                ExitDialog(
+                    onDismiss = { showExitDialog = false },
+                    onConfirm = {
+                        showExitDialog = false
+                        currentScreen = "menu"
+                    }
+                )
+            }
         }
     }
 }
@@ -190,15 +201,15 @@ fun MenuCard(title: String, modifier: Modifier = Modifier, height: Int, width: I
 
         }else{
             Box(
-                contentAlignment = Alignment.Center, // Centrovanie obsahu v Boxe
-                modifier = Modifier.fillMaxSize() // Vyplní celý priestor karty
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
             ) {
                 Text(
                     text = title,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = mainFont,
-                    modifier = Modifier.align(Alignment.Center) // Zarovnanie textu na stred
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
         }
@@ -241,3 +252,21 @@ fun BottomNavigationBar(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStor
     }
 }
 
+@Composable
+fun ExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Naozaj chcete odísť?") },
+        text = { Text("Vaše zmeny nebudú uložené.") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Áno")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Nie")
+            }
+        }
+    )
+}

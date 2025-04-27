@@ -1,4 +1,5 @@
 package com.example.semestralka_vamz.ui
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,10 +31,13 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +45,10 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.semestralka_vamz.data.database.Repository.QuestionRepository
+import com.example.semestralka_vamz.data.database.Repository.QuizRepository
+import com.example.semestralka_vamz.data.database.entity.Question
+import com.example.semestralka_vamz.data.database.entity.Quiz
 
 @Composable
 fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit) {
@@ -49,6 +57,11 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
     var timeLimit by remember { mutableStateOf(0f) }
     val keyboardController = LocalSoftwareKeyboardController.current
     var isTimeLimitEnabled by remember { mutableStateOf(false) }
+    val questions2 = remember { mutableStateListOf<QuestionData>() }
+
+    BackHandler {
+        onHomeClick()
+    }
 
     fun removeQuestion(index: Int) {
         questions = questions.toMutableList().apply {
@@ -139,7 +152,7 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 IconButton(onClick = {
-                                    questions = questions + "Otázka ${questions.size + 1}"
+                                    questions2.add(QuestionData(title = "Otázka ${questions2.size + 1}"))
                                 }) {
                                     Icon(Icons.Default.Add, contentDescription = "Add question")
                                 }
@@ -150,17 +163,17 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
                                     textAlign = TextAlign.Start
                                 )
 
-                                IconButton(onClick = { /* Finish quiz */ }) {
+                                IconButton(onClick = {  }) {
                                     Icon(Icons.Default.Send, contentDescription = "Finish quiz")
                                 }
                             }
                         }
                     }
 
-                    questions.forEachIndexed { index, question ->
+                    questions2.forEachIndexed { index, data ->
                         QuestionItem(
-                            title = question,
-                            onRemove = { removeQuestion(index) }
+                            data = data,
+                            onRemove = { questions2.removeAt(index) }
                         )
                     }
                 }
@@ -178,23 +191,17 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
                 onStorageClick = onStorageClick
             )
         }
-
     }
-
-
-
 }
 
 @Composable
 fun QuestionItem(
-        title: String,
+        data: QuestionData,
         onRemove: () -> Unit
 ) {
-    var question by remember { mutableStateOf("") }
-    var cAnswer by remember { mutableStateOf("") }
+
     val keyboardController = LocalSoftwareKeyboardController.current
     var isExpanded by remember { mutableStateOf(false) }
-    var answers by remember { mutableStateOf(listOf(Answer(""))) }
 
     if (!isExpanded) {
 
@@ -211,11 +218,11 @@ fun QuestionItem(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(12.dp)
             ) {
-                Text(title)
+                Text(data.title)
                 IconButton(onClick = { isExpanded = true }) {
                     Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Open")
                 }
-                Text(question)
+                Text(data.question.value)
                 IconButton(onClick = { onRemove() }) {
                     Icon(Icons.Default.Close, contentDescription = "Delete")
                 }
@@ -236,13 +243,13 @@ fun QuestionItem(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(title)
+                    Text(data.title)
                     IconButton(onClick = { isExpanded = false }) {
                         Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Close")
                     }
                     TextField(
-                        value = question,
-                        onValueChange = { question = it },
+                        value = data.question.value,
+                        onValueChange = { data.question.value = it },
                         label = { Text("Otazka") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -257,8 +264,8 @@ fun QuestionItem(
                 ) {
                     Text("○", fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(end = 8.dp))
                     TextField(
-                        value = cAnswer,
-                        onValueChange = { cAnswer = it },
+                        value = data.correctAnswer.value,
+                        onValueChange = { data.correctAnswer.value = it },
                         label = { Text("Správna odpoveď") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -266,7 +273,7 @@ fun QuestionItem(
                     )
                 }
 
-                answers.forEachIndexed { index, answer ->
+                data.answers.forEachIndexed { index, answer ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
@@ -274,11 +281,10 @@ fun QuestionItem(
                     ) {
                         Text("○", fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(end = 8.dp))
                         TextField(
-                            value = answer.answerText,
-                            onValueChange = { newText ->
-                                answers = answers.toMutableList().apply {
-                                    this[index] = answer.copy(answerText = newText)
-                                }
+                            value = answer,
+                            onValueChange = {
+                                data.answers[index] = it
+
                             },
                             label = { Text("Odpoveď ${index + 1}") },
                             modifier = Modifier
@@ -289,18 +295,51 @@ fun QuestionItem(
                 }
 
                 IconButton(onClick = {
-                    answers = answers + Answer("")
+                    data.answers.add("")
                 }) {
                     Icon(Icons.Default.Add, contentDescription = "Add answer")
                 }
             }
         }
     }
+}
 
+suspend fun saveQuizAndQuestions(
+    quizName: String,
+    timeLimit: Float,
+    isTimeLimitEnabled: Boolean,
+    questions: List<QuestionData>,
+    quizRepository: QuizRepository,
+    questionRepository: QuestionRepository
+) {
+    val quiz = Quiz(
+        title = quizName,
+        timeLimit = timeLimit.toInt(),
+        timeLimitOn = isTimeLimitEnabled
+    )
+
+    val quizId = quizRepository.addQuizReturningId(quiz)
+
+    questions.forEach { data ->
+        val question = Question(
+            quizId = quizId,
+            question = data.question.value,
+            correctAnswer = data.correctAnswer.value,
+            answer1 = data.answers.getOrNull(0),
+            answer2 = data.answers.getOrNull(1),
+            answer3 = data.answers.getOrNull(2)
+        )
+        questionRepository.addQuestion(question)
+    }
 }
 
 
 
-data class Answer(
-    var answerText: String
+
+data class QuestionData(
+    var title: String = "",
+    var question: MutableState<String> = mutableStateOf(""),
+    var correctAnswer: MutableState<String> = mutableStateOf(""),
+    var answers: SnapshotStateList<String> = mutableStateListOf(""),
+    var isTimeLimitEnabled: MutableState<Boolean> = mutableStateOf(true)
 )
