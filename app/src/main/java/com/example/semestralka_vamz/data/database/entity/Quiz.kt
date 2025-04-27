@@ -8,8 +8,10 @@ import androidx.room.PrimaryKey
 data class Quiz(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "question") val question: String,
-    @ColumnInfo(name = "answer1") val answer1: String,
-    @ColumnInfo(name = "answer2") val answer2: String,
-    @ColumnInfo(name = "answer3") val answer3: String,
-    @ColumnInfo(name = "answerC") val correctAnswer: String
+    @ColumnInfo(name = "answerIC") val answerIC: String,
+    @ColumnInfo(name = "answerC") val AnswerC: String,
+    @ColumnInfo(name = "timeLimit") val timeLimit: Int,
+    @ColumnInfo(name = "timeLimitOn") val timeLimitOn: Boolean
+
+
 )
