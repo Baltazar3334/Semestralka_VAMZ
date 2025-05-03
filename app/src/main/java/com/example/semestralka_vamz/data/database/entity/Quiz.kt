@@ -9,5 +9,7 @@ data class Quiz(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "timeLimit") val timeLimit: Int,
-    @ColumnInfo(name = "timeLimitOn") val timeLimitOn: Boolean
+    @ColumnInfo(name = "timeLimitOn") val timeLimitOn: Boolean,
+    @ColumnInfo(name = "favourite") val favourite: Boolean
+
 )

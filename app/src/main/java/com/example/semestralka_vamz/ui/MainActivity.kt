@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             var currentScreen by remember { mutableStateOf("menu") }
             var showExitDialog by remember { mutableStateOf(false) }
+            var showExitDialogToDatabase by remember { mutableStateOf(false) }
 
             when (currentScreen) {
                 "menu" -> MenuScreen(
@@ -74,8 +75,9 @@ class MainActivity : ComponentActivity() {
                 )
                 "createQuiz" -> CreateQuizScreen(
                     onHomeClick = { showExitDialog = true },
+                    onHomeClickNoPopUp = { currentScreen = "menu" },
                     onEditClick = { currentScreen = "createQuiz" },
-                    onStorageClick = { currentScreen = "storage" }
+                    onStorageClick = { showExitDialog = true; showExitDialogToDatabase = true }
                 )
                 "storage" -> QuizStorageScreen(
                     onHomeClick = { currentScreen = "menu" },
@@ -84,13 +86,25 @@ class MainActivity : ComponentActivity() {
                 )
             }
             if (showExitDialog) {
-                ExitDialog(
-                    onDismiss = { showExitDialog = false },
-                    onConfirm = {
-                        showExitDialog = false
-                        currentScreen = "menu"
-                    }
-                )
+                if (!showExitDialogToDatabase) {
+                    ExitDialog(
+                        onDismiss = { showExitDialog = false },
+                        onConfirm = {
+                            showExitDialog = false
+                            currentScreen = "menu"
+                        }
+                    )
+                } else {
+                    ExitDialog(
+                        onDismiss = { showExitDialog = false },
+                        onConfirm = {
+                            showExitDialog = false
+                            showExitDialogToDatabase = false
+                            currentScreen = "storage"
+                        }
+                    )
+                }
+
             }
         }
     }
@@ -269,4 +283,10 @@ fun ExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
             }
         }
     )
+}
+
+fun getLastQuiz(
+
+) {
+
 }

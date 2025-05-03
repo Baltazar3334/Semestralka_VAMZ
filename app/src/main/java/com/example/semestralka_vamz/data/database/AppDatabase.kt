@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.semestralka_vamz.data.database.entity.Question
 import com.example.semestralka_vamz.data.database.entity.Quiz
 
-@Database(entities = [Quiz::class, Question::class], version = 1, exportSchema = false)
+@Database(entities = [Quiz::class, Question::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun quizDao(): QuizDao
     abstract fun questionDao(): QuestionDao
@@ -29,3 +29,4 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
+

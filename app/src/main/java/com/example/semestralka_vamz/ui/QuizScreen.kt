@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit) {
+fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onHomeClickNoPopUp: () -> Unit) {
     var quizName by remember { mutableStateOf("") }
     var timeLimit by remember { mutableStateOf(0f) }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -70,6 +70,8 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
     val quizRepository = QuizRepository(db.quizDao())
     val questionRepository = QuestionRepository(db.questionDao())
 
+
+
     BackHandler {
         onHomeClick()
     }
@@ -79,9 +81,6 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
             .fillMaxSize()
             .background(Color(0xFFF0F0F0))
     ) {
-
-
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -156,6 +155,7 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
                             ) {
                                 IconButton(onClick = {
                                     questions2.add(QuestionData(title = "Otázka ${questions2.size + 1}"))
+
                                 }) {
                                     Icon(Icons.Default.Add, contentDescription = "Add question")
                                 }
@@ -167,8 +167,9 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
                                 IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch {
                                     saveQuizAndQuestions(
                                         quizName, timeLimit, isTimeLimitEnabled,
-                                        questions2, quizRepository, questionRepository
+                                        questions2, quizRepository, questionRepository, false
                                     )
+                                    onHomeClickNoPopUp()
                                 } } ) {
                                     Icon(Icons.Default.Send, contentDescription = "Finish quiz")
                                 }
@@ -325,12 +326,14 @@ suspend fun saveQuizAndQuestions(
     isTimeLimitEnabled: Boolean,
     questions: List<QuestionData>,
     quizRepository: QuizRepository,
-    questionRepository: QuestionRepository
+    questionRepository: QuestionRepository,
+    favourite: Boolean
 ) {
     val quiz = Quiz(
         title = quizName,
         timeLimit = timeLimit.toInt(),
-        timeLimitOn = isTimeLimitEnabled
+        timeLimitOn = isTimeLimitEnabled,
+        favourite = favourite
     )
 
     val quizId = quizRepository.addQuizReturningId(quiz)
@@ -348,13 +351,11 @@ suspend fun saveQuizAndQuestions(
     }
 }
 
-
-
-
 data class QuestionData(
     var title: String = "",
     var question: MutableState<String> = mutableStateOf(""),
     var correctAnswer: MutableState<String> = mutableStateOf(""),
     var answers: SnapshotStateList<String> = mutableStateListOf(""),
-    var isTimeLimitEnabled: MutableState<Boolean> = mutableStateOf(true)
+    var isTimeLimitEnabled: MutableState<Boolean> = mutableStateOf(true),
+    var favourite: MutableState<Boolean> = mutableStateOf(false)
 )
