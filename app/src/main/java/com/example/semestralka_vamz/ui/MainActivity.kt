@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.semestralka_vamz.R
+import com.example.semestralka_vamz.data.database.entity.Quiz
 
 val mainFont = FontFamily(
     Font(R.font.lato_black)
@@ -66,12 +67,13 @@ class MainActivity : ComponentActivity() {
             var currentScreen by remember { mutableStateOf("menu") }
             var showExitDialog by remember { mutableStateOf(false) }
             var showExitDialogToDatabase by remember { mutableStateOf(false) }
+            var selectedQuiz by remember { mutableStateOf<Quiz?>(null) }
 
             when (currentScreen) {
                 "menu" -> MenuScreen(
                     onEditClick = { currentScreen = "createQuiz" },
                     onHomeClick = { currentScreen = "menu" },
-                    onStorageClick = {currentScreen = "storage"}
+                    onStorageClick = { currentScreen = "storage" }
                 )
                 "createQuiz" -> CreateQuizScreen(
                     onHomeClick = { showExitDialog = true },
@@ -80,10 +82,22 @@ class MainActivity : ComponentActivity() {
                     onStorageClick = { showExitDialog = true; showExitDialogToDatabase = true }
                 )
                 "storage" -> QuizStorageScreen(
-                    onHomeClick = { currentScreen = "menu" },
                     onEditClick = { currentScreen = "createQuiz" },
-                    onStorageClick = { currentScreen = "storage" }
+                    onHomeClick = { currentScreen = "menu" },
+                    onStorageClick = { currentScreen = "storage" },
+                    onPlayClick = { quiz ->
+                        selectedQuiz = quiz
+                        currentScreen = "playQuiz"
+                    }
                 )
+                "playQuiz" -> selectedQuiz?.let { quiz ->
+                    PlayQuizScreen(
+                        onEditClick = { showExitDialog = true },
+                        onHomeClick = { showExitDialog = true  },
+                        onStorageClick = { showExitDialog = true; showExitDialogToDatabase = true },
+                        quiz = quiz,
+                        onBack = { showExitDialog = true; showExitDialogToDatabase = true })
+                }
             }
             if (showExitDialog) {
                 if (!showExitDialogToDatabase) {

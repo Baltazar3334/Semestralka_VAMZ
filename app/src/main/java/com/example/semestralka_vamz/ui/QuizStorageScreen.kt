@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -38,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import com.example.semestralka_vamz.data.database.AppDatabase
 import com.example.semestralka_vamz.data.database.Repository.QuestionRepository
 import com.example.semestralka_vamz.data.database.Repository.QuizRepository
-import com.example.semestralka_vamz.data.database.entity.Question
 import com.example.semestralka_vamz.data.database.entity.Quiz
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,24 +47,18 @@ import kotlinx.coroutines.withContext
 
 
 @Composable
-fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit) {
+fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onPlayClick: (Quiz) -> Unit) {
 
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val quizRepository = QuizRepository(db.quizDao())
     val questionRepository = QuestionRepository(db.questionDao())
 
-    val questionsList0 = questionRepository.getQuestions()
-    var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) }
     val quizList0 = quizRepository.getQuizzes()
     var quizList by remember { mutableStateOf<List<Quiz>>(emptyList()) }
 
 
-    LaunchedEffect(questionsList0) {
-        questionsList0.collect { question ->
-            questionsList = question
-        }
-    }
+
     LaunchedEffect(quizList0) {
         quizList0.collect { quiz ->
             quizList = quiz
@@ -93,8 +87,8 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
 
-                QuizSection(title = "Basic", quizList)
-                QuizSection(title = "Flash Cards", quizList)
+                QuizSection(title = "Basic", quizList, onPlayClick)
+                QuizSection(title = "Flash Cards", quizList, onPlayClick)
                 Spacer(modifier = Modifier.weight(1f))
 
             }
@@ -119,7 +113,7 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
 }
 
 @Composable
-fun QuizSection(title: String, quizzes: List<Quiz>) {
+fun QuizSection(title: String, quizzes: List<Quiz>, onPlayClick: (Quiz) -> Unit) {
     var colapsed by remember { mutableStateOf(false) }
     if (!colapsed){
         Column(
@@ -136,7 +130,7 @@ fun QuizSection(title: String, quizzes: List<Quiz>) {
                 }
             }
             for (quiz in quizzes) {
-                QuizItem(quiz)
+                QuizItem(quiz, onPlayClick)
             }
 
 
@@ -161,7 +155,7 @@ fun QuizSection(title: String, quizzes: List<Quiz>) {
 }
 
 @Composable
-fun QuizItem(kviz: Quiz) {
+fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     var jeOblubeny by remember { mutableStateOf(false) }
@@ -205,7 +199,12 @@ fun QuizItem(kviz: Quiz) {
 
             }
             IconButton(onClick = {  } ) {
-                Icon(Icons.Default.Build, contentDescription = "Score")
+                Icon(Icons.Default.Build, contentDescription = "Upravit")
+            }
+            IconButton(onClick = {
+                onPlayClick(kviz)
+            } ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = "hratKviz")
             }
         }
     }
