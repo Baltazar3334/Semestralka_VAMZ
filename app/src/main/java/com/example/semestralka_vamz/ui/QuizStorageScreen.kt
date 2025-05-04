@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.example.semestralka_vamz.data.database.AppDatabase
 import com.example.semestralka_vamz.data.database.Repository.QuestionRepository
 import com.example.semestralka_vamz.data.database.Repository.QuizRepository
+import com.example.semestralka_vamz.data.database.entity.Question
 import com.example.semestralka_vamz.data.database.entity.Quiz
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,13 +58,41 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
     val quizList0 = quizRepository.getQuizzes()
     var quizList by remember { mutableStateOf<List<Quiz>>(emptyList()) }
 
+    val questionsList0 = questionRepository.getQuestions()
+    var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) }
 
-
+    LaunchedEffect(questionsList0) {
+        questionsList0.collect { question ->
+            questionsList = question
+        }
+    }
     LaunchedEffect(quizList0) {
         quizList0.collect { quiz ->
             quizList = quiz
         }
     }
+
+    for ( Quiz in quizList) {
+        println("Quiz:")
+        println(Quiz.title)
+        println("Otazky:")
+        for (Question in questionsList) {
+            if (Question.quizId == Quiz.id) {
+                println(Question.question)
+                println(Question.correctAnswer)
+                println(Question.answer1)
+                println(Question.answer2)
+                println(Question.answer3)
+            }
+        }
+    }
+
+
+
+
+
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -159,6 +188,8 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     var jeOblubeny by remember { mutableStateOf(false) }
+
+
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             jeOblubeny = db.quizDao().isFavourite(kviz.id)
