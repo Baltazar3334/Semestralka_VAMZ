@@ -72,20 +72,6 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
         }
     }
 
-    for ( Quiz in quizList) {
-        println("Quiz:")
-        println(Quiz.title)
-        println("Otazky:")
-        for (Question in questionsList) {
-            if (Question.quizId == Quiz.id) {
-                println(Question.question)
-                println(Question.correctAnswer)
-                println(Question.answer1)
-                println(Question.answer2)
-                println(Question.answer3)
-            }
-        }
-    }
 
 
 

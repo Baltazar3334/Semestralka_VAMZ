@@ -4,6 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +67,7 @@ val mainFont = FontFamily(
 
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -68,35 +76,84 @@ class MainActivity : ComponentActivity() {
             var showExitDialog by remember { mutableStateOf(false) }
             var showExitDialogToDatabase by remember { mutableStateOf(false) }
             var selectedQuiz by remember { mutableStateOf<Quiz?>(null) }
+            var transitionDirection by remember { mutableStateOf(1) }
 
-            when (currentScreen) {
-                "menu" -> MenuScreen(
-                    onEditClick = { currentScreen = "createQuiz" },
-                    onHomeClick = { currentScreen = "menu" },
-                    onStorageClick = { currentScreen = "storage" }
-                )
-                "createQuiz" -> CreateQuizScreen(
-                    onHomeClick = { showExitDialog = true },
-                    onHomeClickNoPopUp = { currentScreen = "menu" },
-                    onEditClick = { currentScreen = "createQuiz" },
-                    onStorageClick = { showExitDialog = true; showExitDialogToDatabase = true }
-                )
-                "storage" -> QuizStorageScreen(
-                    onEditClick = { currentScreen = "createQuiz" },
-                    onHomeClick = { currentScreen = "menu" },
-                    onStorageClick = { currentScreen = "storage" },
-                    onPlayClick = { quiz ->
-                        selectedQuiz = quiz
-                        currentScreen = "playQuiz"
+            AnimatedContent(
+                targetState = currentScreen,
+                transitionSpec = {
+                    slideInHorizontally { fullWidth -> fullWidth * transitionDirection } + fadeIn() with
+                            slideOutHorizontally { fullWidth -> -fullWidth * transitionDirection } + fadeOut()
+                },
+                label = "Screen Transition"
+            ) { screen ->
+                when (screen) {
+                    "menu" -> MenuScreen(
+                        onEditClick = {
+                            currentScreen = "createQuiz"
+                            transitionDirection = 1
+                        },
+                        onHomeClick = { currentScreen = "menu" },
+                        onStorageClick = {
+                            currentScreen = "storage"
+                            transitionDirection = -1
+                        }
+                    )
+                    "createQuiz" -> CreateQuizScreen(
+                        onHomeClick = {
+                            showExitDialog = true
+                            transitionDirection = -1
+                        },
+                        onHomeClickNoPopUp = {
+                            currentScreen = "menu"
+                            transitionDirection = -1
+                        },
+                        onEditClick = { currentScreen = "createQuiz" },
+                        onStorageClick = {
+                            showExitDialog = true
+                            showExitDialogToDatabase = true
+                            transitionDirection = -1
+                        }
+                    )
+                    "storage" -> QuizStorageScreen(
+                        onEditClick = {
+                            currentScreen = "createQuiz"
+                            transitionDirection = 1
+                        },
+                        onHomeClick = {
+                            currentScreen = "menu"
+                            transitionDirection = 1
+                        },
+                        onStorageClick = { currentScreen = "storage" },
+                        onPlayClick = { quiz ->
+                            selectedQuiz = quiz
+                            currentScreen = "playQuiz"
+                            transitionDirection = -1
+                        }
+                    )
+                    "playQuiz" -> selectedQuiz?.let { quiz ->
+                        PlayQuizScreen(
+                            onEditClick = {
+                                showExitDialog = true
+                                transitionDirection = 1
+                            },
+                            onHomeClick = {
+                                showExitDialog = true
+                                transitionDirection = 1
+                            },
+                            onStorageClick = {
+                                showExitDialog = true
+                                showExitDialogToDatabase = true
+                                transitionDirection = 1
+                            },
+                            quiz = quiz,
+                            onBack = {
+                                showExitDialog = true
+                                showExitDialogToDatabase = true
+                                transitionDirection = 1
+                            },
+                            KickOutNoQuiz = { currentScreen = "storage" }
+                        )
                     }
-                )
-                "playQuiz" -> selectedQuiz?.let { quiz ->
-                    PlayQuizScreen(
-                        onEditClick = { showExitDialog = true },
-                        onHomeClick = { showExitDialog = true  },
-                        onStorageClick = { showExitDialog = true; showExitDialogToDatabase = true },
-                        quiz = quiz,
-                        onBack = { showExitDialog = true; showExitDialogToDatabase = true })
                 }
             }
             if (showExitDialog) {
@@ -299,8 +356,3 @@ fun ExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     )
 }
 
-fun getLastQuiz(
-
-) {
-
-}
