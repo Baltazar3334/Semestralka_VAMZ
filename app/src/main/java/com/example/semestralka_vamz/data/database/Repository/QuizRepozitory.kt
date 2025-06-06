@@ -11,16 +11,12 @@ class QuizRepository(private val quizDao: QuizDao) {
         return quizDao.insertAndReturnId(quiz)
     }
 
-    suspend fun updateQuiz(quiz: Quiz) {
-        quizDao.update(quiz)
-    }
-
-    suspend fun deleteQuiz(quiz: Quiz) {
-        quizDao.delete(quiz)
-    }
-
     fun getQuizzes(): Flow<List<Quiz>> {
         return allQuizzes
+    }
+
+    fun deleteQuizById(id: Long) {
+        quizDao.deleteQuizById(id)
     }
 
 

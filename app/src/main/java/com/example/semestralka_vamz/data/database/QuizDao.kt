@@ -18,6 +18,9 @@ interface QuizDao {
     @Update(onConflict = OnConflictStrategy.ABORT)
     suspend fun update(quiz: Quiz)
 
+    @Query("DELETE FROM quiz_table WHERE id = :quizId")
+    fun deleteQuizById(quizId: Long)
+
     @Delete
     suspend fun delete(quiz: Quiz)
 

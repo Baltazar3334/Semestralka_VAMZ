@@ -32,6 +32,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -58,12 +59,15 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onHomeClickNoPopUp: () -> Unit) {
+fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onHomeClickNoPopUp: () -> Unit) {
     var quizName by remember { mutableStateOf("") }
     var timeLimit by remember { mutableStateOf(0f) }
     val keyboardController = LocalSoftwareKeyboardController.current
     var isTimeLimitEnabled by remember { mutableStateOf(false) }
     val questions2 = remember { mutableStateListOf<QuestionData>() }
+
+    var existingQuiz = existingQuiz
+    var existingQuizQuestions by remember { mutableStateOf<List<Question>>(emptyList()) }
 
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
@@ -72,8 +76,42 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
 
 
 
+
     BackHandler {
         onHomeClick()
+    }
+
+    if (existingQuiz != null) {
+        println("načítal sa quiz")
+        quizName = existingQuiz.title
+        timeLimit = existingQuiz.timeLimit.toFloat()
+        isTimeLimitEnabled = existingQuiz.timeLimitOn
+
+        LaunchedEffect(existingQuiz) {
+            questionRepository.getQuestions().collect { allQuestions ->
+                existingQuizQuestions = allQuestions.filter { it.quizId == existingQuiz.id }
+
+                questions2.clear()
+                for (question in existingQuizQuestions) {
+                    val answersList = mutableStateListOf<String>().apply {
+                        question.answer1?.let { add(it) }
+                        question.answer2?.let { add(it) }
+                        question.answer3?.let { add(it) }
+                    }
+
+                    questions2.add(
+                        QuestionData(
+                            title = "Otázka " + questions2.size.toString(),
+                            question = mutableStateOf(question.question),
+                            correctAnswer = mutableStateOf(question.correctAnswer),
+                            answers = answersList,
+                            isTimeLimitEnabled = mutableStateOf(existingQuiz.timeLimitOn),
+                            favourite = mutableStateOf(false)
+                        )
+                    )
+                }
+            }
+        }
     }
 
     Box(
@@ -164,15 +202,29 @@ fun CreateQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorage
                                     modifier = Modifier.weight(1f),
                                     textAlign = TextAlign.Start
                                 )
-                                IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch {
-                                    saveQuizAndQuestions(
-                                        quizName, timeLimit, isTimeLimitEnabled,
-                                        questions2, quizRepository, questionRepository, false
-                                    )
-                                    onHomeClickNoPopUp()
-                                } } ) {
-                                    Icon(Icons.Default.Send, contentDescription = "Finish quiz")
+                                if(existingQuiz != null) {
+                                    IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch {
+                                        saveQuizAndQuestions(
+                                            quizName, timeLimit, isTimeLimitEnabled,
+                                            questions2, quizRepository, questionRepository, false, existingQuiz
+                                        )
+                                        onHomeClickNoPopUp()
+                                    } } ) {
+                                        Icon(Icons.Default.Send, contentDescription = "Finish quiz")
+                                    }
+                                } else {
+                                    IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch {
+                                        saveQuizAndQuestions(
+                                            quizName, timeLimit, isTimeLimitEnabled,
+                                            questions2, quizRepository, questionRepository, false
+                                        )
+                                        onHomeClickNoPopUp()
+                                    } } ) {
+                                        Icon(Icons.Default.Send, contentDescription = "Finish quiz")
+                                    }
                                 }
+
+
                             }
                         }
                     }
@@ -327,20 +379,30 @@ suspend fun saveQuizAndQuestions(
     questions: List<QuestionData>,
     quizRepository: QuizRepository,
     questionRepository: QuestionRepository,
-    favourite: Boolean
+    favourite: Boolean,
+    existingQuiz: Quiz? = null
 ) {
-    val quiz = Quiz(
+    // Ak ide o úpravu existujúceho kvízu
+    if (existingQuiz != null) {
+        // Vymažeme pôvodný kvíz (aj otázky sa vymažú automaticky cez ForeignKey CASCADE)
+        quizRepository.deleteQuizById(existingQuiz.id)
+    }
+
+    // Vytvoríme nový quiz
+    val newQuiz = Quiz(
         title = quizName,
         timeLimit = timeLimit.toInt(),
         timeLimitOn = isTimeLimitEnabled,
         favourite = favourite
     )
 
-    val quizId = quizRepository.addQuizReturningId(quiz)
+    // Uložíme nový quiz a získame jeho nové ID
+    val newQuizId = quizRepository.addQuizReturningId(newQuiz)
 
+    // Pridáme nové otázky s novým quizId
     questions.forEach { data ->
         val question = Question(
-            quizId = quizId,
+            quizId = newQuizId,
             question = data.question.value,
             correctAnswer = data.correctAnswer.value,
             answer1 = data.answers.getOrNull(0),

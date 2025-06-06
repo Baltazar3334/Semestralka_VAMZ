@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -48,7 +49,7 @@ import kotlinx.coroutines.withContext
 
 
 @Composable
-fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onPlayClick: (Quiz) -> Unit) {
+fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit) {
 
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
@@ -71,12 +72,6 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
             quizList = quiz
         }
     }
-
-
-
-
-
-
 
 
     Box(
@@ -102,8 +97,8 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
 
-                QuizSection(title = "Basic", quizList, onPlayClick)
-                QuizSection(title = "Flash Cards", quizList, onPlayClick)
+                QuizSection(title = "Basic", quizList, onPlayClick, onAlterClick)
+                QuizSection(title = "Flash Cards", quizList, onPlayClick, onAlterClick)
                 Spacer(modifier = Modifier.weight(1f))
 
             }
@@ -128,7 +123,7 @@ fun QuizStorageScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorag
 }
 
 @Composable
-fun QuizSection(title: String, quizzes: List<Quiz>, onPlayClick: (Quiz) -> Unit) {
+fun QuizSection( title: String, quizzes: List<Quiz>, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit) {
     var colapsed by remember { mutableStateOf(false) }
     if (!colapsed){
         Column(
@@ -145,7 +140,7 @@ fun QuizSection(title: String, quizzes: List<Quiz>, onPlayClick: (Quiz) -> Unit)
                 }
             }
             for (quiz in quizzes) {
-                QuizItem(quiz, onPlayClick)
+                QuizItem(quiz, onPlayClick, onAlterClick)
             }
 
 
@@ -170,9 +165,10 @@ fun QuizSection(title: String, quizzes: List<Quiz>, onPlayClick: (Quiz) -> Unit)
 }
 
 @Composable
-fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit) {
+fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
+
     var jeOblubeny by remember { mutableStateOf(false) }
 
 
@@ -216,6 +212,9 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit) {
 
             }
             IconButton(onClick = {  } ) {
+                Icon(Icons.Default.Delete, contentDescription = "Vymazat")
+            }
+            IconButton(onClick = { onAlterClick(kviz) } ) {
                 Icon(Icons.Default.Build, contentDescription = "Upravit")
             }
             IconButton(onClick = {

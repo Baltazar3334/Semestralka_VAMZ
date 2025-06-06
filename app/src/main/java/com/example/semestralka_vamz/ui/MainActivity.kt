@@ -77,6 +77,7 @@ class MainActivity : ComponentActivity() {
             var showExitDialogToDatabase by remember { mutableStateOf(false) }
             var selectedQuiz by remember { mutableStateOf<Quiz?>(null) }
             var transitionDirection by remember { mutableStateOf(1) }
+            var existingQuiz by remember {mutableStateOf<Quiz?>(null)}
 
             AnimatedContent(
                 targetState = currentScreen,
@@ -99,6 +100,7 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                     "createQuiz" -> CreateQuizScreen(
+                        existingQuiz = selectedQuiz,
                         onHomeClick = {
                             showExitDialog = true
                             transitionDirection = -1
@@ -115,6 +117,7 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                     "storage" -> QuizStorageScreen(
+
                         onEditClick = {
                             currentScreen = "createQuiz"
                             transitionDirection = 1
@@ -128,6 +131,10 @@ class MainActivity : ComponentActivity() {
                             selectedQuiz = quiz
                             currentScreen = "playQuiz"
                             transitionDirection = -1
+                        },
+                        onAlterClick = { quiz ->
+                            selectedQuiz = quiz
+                            currentScreen = "createQuiz"
                         }
                     )
                     "playQuiz" -> selectedQuiz?.let { quiz ->
