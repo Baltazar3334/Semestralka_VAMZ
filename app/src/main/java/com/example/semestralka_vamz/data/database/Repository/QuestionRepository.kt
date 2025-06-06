@@ -11,9 +11,7 @@ class QuestionRepository(private val questionDao: QuestionDao) {
         return allQuestions
     }
 
-    fun deleteQuestionById(id: Long) {
-        questionDao.deleteQuestionById(id)
-    }
+
 
     suspend fun addQuestion(question: Question) {
         questionDao.insert(question)
