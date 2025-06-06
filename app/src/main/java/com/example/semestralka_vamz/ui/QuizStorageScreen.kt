@@ -20,11 +20,13 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -168,15 +170,17 @@ fun QuizSection( title: String, quizzes: List<Quiz>, onPlayClick: (Quiz) -> Unit
 fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
-
+    val quizRepository = QuizRepository(db.quizDao())
     var jeOblubeny by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-
-    LaunchedEffect(Unit) {
+    LaunchedEffect(jeOblubeny) {
         withContext(Dispatchers.IO) {
             jeOblubeny = db.quizDao().isFavourite(kviz.id)
         }
     }
+
+
 
     Card(
         modifier = Modifier
@@ -211,7 +215,7 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
                 Text(text = kviz.title)
 
             }
-            IconButton(onClick = {  } ) {
+            IconButton(onClick = { showDeleteDialog = true } ) {
                 Icon(Icons.Default.Delete, contentDescription = "Vymazat")
             }
             IconButton(onClick = { onAlterClick(kviz) } ) {
@@ -224,6 +228,34 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
             }
         }
     }
+    if (showDeleteDialog) {
+        DeleteDialog(
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                showDeleteDialog = false
+                CoroutineScope(Dispatchers.IO).launch {
+                    quizRepository.deleteQuizById(kviz.id)
+                }
+            }
+        )
+    }
 }
 
-
+@Composable
+fun DeleteDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Naozaj chcete vymazať tento Kvíz?") },
+        text = { Text("Vaše zmeny sa nedajú vrátiť.") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Áno")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Nie")
+            }
+        }
+    )
+}

@@ -77,7 +77,6 @@ class MainActivity : ComponentActivity() {
             var showExitDialogToDatabase by remember { mutableStateOf(false) }
             var selectedQuiz by remember { mutableStateOf<Quiz?>(null) }
             var transitionDirection by remember { mutableStateOf(1) }
-            var existingQuiz by remember {mutableStateOf<Quiz?>(null)}
 
             AnimatedContent(
                 targetState = currentScreen,
@@ -362,4 +361,6 @@ fun ExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
         }
     )
 }
+
+
 
