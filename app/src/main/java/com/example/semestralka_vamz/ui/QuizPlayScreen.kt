@@ -123,19 +123,22 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                     Icon(Icons.Default.ArrowBack, contentDescription = "Späť")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                if (questionsList.isNotEmpty()) {
-                    QuestionPanel(questionsList[0], quiz.title,
+                if (questionsList.isNotEmpty() && currentQuestionIndex < questionsList.size) {
+                    QuestionPanel(
+                        question = questionsList[currentQuestionIndex],
+                        meno = quiz.title,
                         onAnswerSelected = { isCorrect ->
-                        if (isCorrect) {
-                            nCorrect += 1
-                            print("pocet bodov je ")
-                            println(nCorrect)
-                        } else {
-                            print("pocet bodov je ")
-                            println(nCorrect)
+                            if (isCorrect) {
+                                nCorrect += 1
+                                println("pocet bodov je $nCorrect")
+                            } else {
+                                println("pocet bodov je $nCorrect")
+                            }
+                            currentQuestionIndex += 1
                         }
-
-                    })
+                    )
+                } else if (questionsList.isNotEmpty()) {
+                    Text("Kvíz dokončený! Máš $nCorrect bodov.")
                 }
             }
 
@@ -162,11 +165,16 @@ fun QuestionPanel(question: Question, meno: String, onAnswerSelected: (Boolean) 
     var answers = remember (question) { mutableListOf(question.answer1, question.answer2, question.answer3, question.correctAnswer).filterNotNull().shuffled() }
     var selectedAnswer by remember { mutableStateOf<String?>(null) }
 
-    println("*****otakzy*******")
-    for (answer in answers) {
-        println(answer);
+    LaunchedEffect(question) {
+        selectedAnswer = null
     }
 
+    LaunchedEffect(selectedAnswer) {
+        if (selectedAnswer != null) {
+            delay(1000)
+            onAnswerSelected(selectedAnswer == question.correctAnswer)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -204,7 +212,6 @@ fun QuestionPanel(question: Question, meno: String, onAnswerSelected: (Boolean) 
                         AnswerCard(answer = answer, modifier = Modifier.weight(1f), question.correctAnswer, selectedAnswer,
                             onClick = {
                                 selectedAnswer = answer
-                                onAnswerSelected(answer == question.correctAnswer)
                             })
                     }
                     if (pair.size == 1) {
