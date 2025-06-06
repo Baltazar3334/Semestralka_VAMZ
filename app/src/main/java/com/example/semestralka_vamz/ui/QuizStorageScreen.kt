@@ -47,7 +47,6 @@ import com.example.semestralka_vamz.data.database.entity.Quiz
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -125,45 +124,43 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
 }
 
 @Composable
-fun QuizSection( title: String, quizzes: List<Quiz>, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit) {
+fun QuizSection(title: String,quizzes: List<Quiz>,onPlayClick: (Quiz) -> Unit,onAlterClick: (Quiz) -> Unit) {
     var colapsed by remember { mutableStateOf(false) }
-    if (!colapsed){
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                IconButton(onClick = { colapsed = true } ) {
-                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "colapse")
-                }
-            }
-            for (quiz in quizzes) {
-                QuizItem(quiz, onPlayClick, onAlterClick)
-            }
 
 
+    val sortedQuizzes = remember(quizzes) {
+        quizzes.sortedByDescending { it.favourite }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = { colapsed = !colapsed }) {
+                Icon(
+                    if (colapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                    contentDescription = if (colapsed) "Expand" else "Collapse"
+                )
+            }
         }
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                IconButton(onClick = { colapsed = false } ) {
-                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "expand")
-                }
+
+        if (!colapsed) {
+            sortedQuizzes.forEach { quiz ->
+                QuizItem(
+                    kviz = quiz,
+                    onPlayClick = onPlayClick,
+                    onAlterClick = onAlterClick
+                )
             }
         }
     }
-
 }
 
 @Composable
@@ -171,14 +168,7 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val quizRepository = QuizRepository(db.quizDao())
-    var jeOblubeny by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(jeOblubeny) {
-        withContext(Dispatchers.IO) {
-            jeOblubeny = db.quizDao().isFavourite(kviz.id)
-        }
-    }
 
 
 
@@ -196,14 +186,11 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
 
             IconButton(onClick = {
                 CoroutineScope(Dispatchers.IO).launch {
-                    val novaHodnota = !jeOblubeny
-                    db.quizDao().updateFavourite(kviz.id, novaHodnota)
-                    withContext(Dispatchers.Main) {
-                        jeOblubeny = novaHodnota
-                    }
+                    val newValue = !kviz.favourite
+                    db.quizDao().updateFavourite(kviz.id, newValue)
                 }
             } ) {
-                if (jeOblubeny) {
+                if (kviz.favourite) {
                     Icon(Icons.Default.Favorite, contentDescription = "Obľúbený")
                 } else {
                     Icon(Icons.Default.FavoriteBorder, contentDescription = "Nie je obľúbený")

@@ -45,12 +45,11 @@ import kotlinx.coroutines.delay
 
 
 @Composable
-fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, quiz: Quiz, onBack: () -> Unit, KickOutNoQuiz: () -> Unit) {
+fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, quiz: Quiz, onBack: () -> Unit, KickOutNoQuiz: () -> Unit, onDoneClick: (correctAnswers: Int, totalQuestions: Int) -> Unit) {
 
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val questionRepository = QuestionRepository(db.questionDao())
-    val questionsList0 = questionRepository.getQuestions()
     var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) }
     var nCorrect by remember { mutableStateOf(0) }
     var currentQuestionIndex by remember { mutableStateOf(0) }
@@ -138,7 +137,7 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                         }
                     )
                 } else if (questionsList.isNotEmpty()) {
-                    Text("Kvíz dokončený! Máš $nCorrect bodov.")
+                    onDoneClick(nCorrect, questionsList.size)
                 }
             }
 

@@ -77,6 +77,8 @@ class MainActivity : ComponentActivity() {
             var showExitDialogToDatabase by remember { mutableStateOf(false) }
             var selectedQuiz by remember { mutableStateOf<Quiz?>(null) }
             var transitionDirection by remember { mutableStateOf(1) }
+            var correctCount by remember { mutableStateOf(0) }
+            var totalCount by remember { mutableStateOf(0) }
 
             AnimatedContent(
                 targetState = currentScreen,
@@ -89,6 +91,7 @@ class MainActivity : ComponentActivity() {
                 when (screen) {
                     "menu" -> MenuScreen(
                         onEditClick = {
+                            selectedQuiz = null
                             currentScreen = "createQuiz"
                             transitionDirection = 1
                         },
@@ -97,6 +100,14 @@ class MainActivity : ComponentActivity() {
                             currentScreen = "storage"
                             transitionDirection = -1
                         }
+                    )
+                    "finish" -> FinishedQuizScreen(
+                        correctAnswers = correctCount,
+                        totalQuestions = totalCount,
+                        onRetryClick = {
+                            currentScreen = "playQuiz"
+                        },
+                        onHomeClick = { currentScreen = "menu" }
                     )
                     "createQuiz" -> CreateQuizScreen(
                         existingQuiz = selectedQuiz,
@@ -118,6 +129,7 @@ class MainActivity : ComponentActivity() {
                     "storage" -> QuizStorageScreen(
 
                         onEditClick = {
+                            selectedQuiz = null
                             currentScreen = "createQuiz"
                             transitionDirection = 1
                         },
@@ -139,6 +151,7 @@ class MainActivity : ComponentActivity() {
                     "playQuiz" -> selectedQuiz?.let { quiz ->
                         PlayQuizScreen(
                             onEditClick = {
+                                selectedQuiz = null
                                 showExitDialog = true
                                 transitionDirection = 1
                             },
@@ -157,7 +170,11 @@ class MainActivity : ComponentActivity() {
                                 showExitDialogToDatabase = true
                                 transitionDirection = 1
                             },
-                            KickOutNoQuiz = { currentScreen = "storage" }
+                            KickOutNoQuiz = { currentScreen = "storage" },
+                            onDoneClick = { correctAnswers, totalQuestions ->
+                                correctCount = correctAnswers
+                                totalCount = totalQuestions
+                                currentScreen = "finish" }
                         )
                     }
                 }

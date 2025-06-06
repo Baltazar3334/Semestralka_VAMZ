@@ -55,6 +55,7 @@ import com.example.semestralka_vamz.data.database.entity.Question
 import com.example.semestralka_vamz.data.database.entity.Quiz
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
 
@@ -74,12 +75,10 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
     val quizRepository = QuizRepository(db.quizDao())
     val questionRepository = QuestionRepository(db.questionDao())
 
-
-
-
     BackHandler {
         onHomeClick()
     }
+
 
     if (existingQuiz != null) {
         println("načítal sa quiz")
@@ -87,29 +86,33 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
         timeLimit = existingQuiz.timeLimit.toFloat()
         isTimeLimitEnabled = existingQuiz.timeLimitOn
 
-        LaunchedEffect(existingQuiz) {
-            questionRepository.getQuestions().collect { allQuestions ->
-                existingQuizQuestions = allQuestions.filter { it.quizId == existingQuiz.id }
+        LaunchedEffect(Unit) {
+            if (existingQuiz != null) {
+                questionRepository.getQuestions()
+                    .take(1)
+                    .collect { allQuestions ->
+                        existingQuizQuestions = allQuestions.filter { it.quizId == existingQuiz.id }
 
-                questions2.clear()
-                for (question in existingQuizQuestions) {
-                    val answersList = mutableStateListOf<String>().apply {
-                        question.answer1?.let { add(it) }
-                        question.answer2?.let { add(it) }
-                        question.answer3?.let { add(it) }
+                        questions2.clear()
+                        for (question in existingQuizQuestions) {
+                            val answersList = mutableStateListOf<String>().apply {
+                                question.answer1?.let { add(it) }
+                                question.answer2?.let { add(it) }
+                                question.answer3?.let { add(it) }
+                            }
+
+                            questions2.add(
+                                QuestionData(
+                                    title = "Otázka " + questions2.size.toString(),
+                                    question = mutableStateOf(question.question),
+                                    correctAnswer = mutableStateOf(question.correctAnswer),
+                                    answers = answersList,
+                                    isTimeLimitEnabled = mutableStateOf(existingQuiz.timeLimitOn),
+                                    favourite = mutableStateOf(false)
+                                )
+                            )
+                        }
                     }
-
-                    questions2.add(
-                        QuestionData(
-                            title = "Otázka " + questions2.size.toString(),
-                            question = mutableStateOf(question.question),
-                            correctAnswer = mutableStateOf(question.correctAnswer),
-                            answers = answersList,
-                            isTimeLimitEnabled = mutableStateOf(existingQuiz.timeLimitOn),
-                            favourite = mutableStateOf(false)
-                        )
-                    )
-                }
             }
         }
     }
@@ -337,7 +340,6 @@ fun QuestionItem(
                             value = answer,
                             onValueChange = {
                                 data.answers[index] = it
-
                             },
                             label = { Text("Odpoveď ${index + 1}") },
                             modifier = Modifier
@@ -382,24 +384,16 @@ suspend fun saveQuizAndQuestions(
     favourite: Boolean,
     existingQuiz: Quiz? = null
 ) {
-    // Ak ide o úpravu existujúceho kvízu
     if (existingQuiz != null) {
-        // Vymažeme pôvodný kvíz (aj otázky sa vymažú automaticky cez ForeignKey CASCADE)
         quizRepository.deleteQuizById(existingQuiz.id)
     }
-
-    // Vytvoríme nový quiz
     val newQuiz = Quiz(
         title = quizName,
         timeLimit = timeLimit.toInt(),
         timeLimitOn = isTimeLimitEnabled,
         favourite = favourite
     )
-
-    // Uložíme nový quiz a získame jeho nové ID
     val newQuizId = quizRepository.addQuizReturningId(newQuiz)
-
-    // Pridáme nové otázky s novým quizId
     questions.forEach { data ->
         val question = Question(
             quizId = newQuizId,
@@ -412,6 +406,8 @@ suspend fun saveQuizAndQuestions(
         questionRepository.addQuestion(question)
     }
 }
+
+
 
 data class QuestionData(
     var title: String = "",
