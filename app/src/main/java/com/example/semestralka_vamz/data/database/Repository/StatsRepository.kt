@@ -9,13 +9,14 @@ class StatsRepository(private val dao: UserStatsDao) {
 
     val statsFlow: Flow<UserStats?> = dao.getStats()
 
-    suspend fun updateStats(correct: Int, total: Int, isPerfect: Boolean) {
+    suspend fun updateStats( correct: Int, total: Int, isPerfect: Boolean, quizId: Long) {
         val current = dao.getStats().firstOrNull() ?: UserStats()
         val updated = current.copy(
             totalQuizzesCompleted = current.totalQuizzesCompleted + 1,
             perfectScores = current.perfectScores + if (isPerfect) 1 else 0,
             totalCorrectAnswers = current.totalCorrectAnswers + correct,
-            totalQuestionsAnswered = current.totalQuestionsAnswered + total
+            totalQuestionsAnswered = current.totalQuestionsAnswered + total,
+            lastQuizId = quizId
         )
         dao.insertStats(updated)
     }

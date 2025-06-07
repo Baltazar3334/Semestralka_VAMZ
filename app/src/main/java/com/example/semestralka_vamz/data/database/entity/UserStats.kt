@@ -9,5 +9,6 @@ data class UserStats(
     val totalQuizzesCompleted: Int = 0,
     val perfectScores: Int = 0,
     val totalCorrectAnswers: Int = 0,
-    val totalQuestionsAnswered: Int = 0
+    val totalQuestionsAnswered: Int = 0,
+    val lastQuizId: Long? = null
 )

@@ -144,7 +144,7 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                     onDoneClick(nCorrect, questionsList.size)
                     val isPerfect = nCorrect == questionsList.size
                     LaunchedEffect(Unit) {
-                        statsRepository.updateStats(nCorrect, questionsList.size, isPerfect)
+                        statsRepository.updateStats(nCorrect, questionsList.size, isPerfect, quiz.id)
                     }
                 }
             }

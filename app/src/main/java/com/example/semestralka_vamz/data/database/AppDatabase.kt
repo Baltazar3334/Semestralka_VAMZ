@@ -8,7 +8,7 @@ import com.example.semestralka_vamz.data.database.entity.Question
 import com.example.semestralka_vamz.data.database.entity.Quiz
 import com.example.semestralka_vamz.data.database.entity.UserStats
 
-@Database(entities = [Quiz::class, Question::class, UserStats::class], version = 4, exportSchema = false)
+@Database(entities = [Quiz::class, Question::class, UserStats::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun quizDao(): QuizDao
     abstract fun questionDao(): QuestionDao

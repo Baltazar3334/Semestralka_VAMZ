@@ -1,5 +1,6 @@
 package com.example.semestralka_vamz.ui
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,7 +12,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,11 +23,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -44,24 +50,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.semestralka_vamz.R
 import com.example.semestralka_vamz.data.database.AppDatabase
+import com.example.semestralka_vamz.data.database.Repository.QuizRepository
 import com.example.semestralka_vamz.data.database.Repository.StatsRepository
 import com.example.semestralka_vamz.data.database.entity.Quiz
 import com.example.semestralka_vamz.ui.theme.SemestralkaTheme
-
-val mainFont = FontFamily(
-    Font(R.font.lato_black)
-)
-
-
-
-
 
 
 class MainActivity : ComponentActivity() {
@@ -98,7 +94,13 @@ class MainActivity : ComponentActivity() {
                             onStorageClick = {
                                 currentScreen = "storage"
                                 transitionDirection = -1
+                            },
+                            onPlayClick = { quiz ->
+                                selectedQuiz = quiz
+                                currentScreen = "playQuiz"
+                                transitionDirection = -1
                             }
+
                         )
                         "finish" -> FinishedQuizScreen(
                             correctAnswers = correctCount,
@@ -206,14 +208,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit) {
+fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onPlayClick: (Quiz) -> Unit) {
 
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val statsRepository = StatsRepository(db.userStatsDao())
+    val quizRepository = QuizRepository(db.quizDao())
     val statsState by statsRepository.statsFlow.collectAsState(initial = null)
     val stats = statsState
-
+    val allQuizzes by quizRepository.getQuizzes().collectAsState(initial = emptyList())
+    val lastQuiz = allQuizzes.find { it.id == statsState?.lastQuizId }
+    val activity = (LocalContext.current as? Activity)
 
     Column(
         modifier = Modifier
@@ -267,8 +272,82 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                     }
                 }
             }
-        }
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(1.dp)
+                    .clickable(enabled = lastQuiz != null)
+                    { lastQuiz?.let { onPlayClick(it) } },
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Posledný kvíz",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (lastQuiz != null) {
+                        Text(lastQuiz.title)
+                    } else {
+                        Text("Nemáte posledný dokončený kvíz.")
+                    }
 
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Card(
+                    modifier = Modifier
+                        .height(100.dp)
+                        .width(100.dp)
+                        .clickable {  },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Settings, contentDescription = "Nastavenia", modifier = Modifier.size(60.dp))
+                    }
+                }
+
+                Card(
+                    modifier = Modifier
+                        .height(100.dp)
+                        .width(100.dp)
+                        .clickable { activity?.finish() },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Exit", modifier = Modifier.size(60.dp))
+                    }
+                }
+            }
+
+        }
         BottomNavigationBar(onEditClick = onEditClick, onHomeClick = onHomeClick, onStorageClick = onStorageClick)
     }
 }
