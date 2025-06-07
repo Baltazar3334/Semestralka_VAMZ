@@ -1,6 +1,5 @@
 package com.example.semestralka_vamz.ui
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +24,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -78,7 +77,6 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF0F0F0))
     ) {
         Column(
             modifier = Modifier
@@ -99,7 +97,6 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
             ) {
 
                 QuizSection(title = "Basic", quizList, onPlayClick, onAlterClick)
-                QuizSection(title = "Flash Cards", quizList, onPlayClick, onAlterClick)
                 Spacer(modifier = Modifier.weight(1f))
 
             }
@@ -176,7 +173,11 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        )
+
     ) {
         Row(
             modifier = Modifier

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.semestralka_vamz.data.database.AppDatabase
 import com.example.semestralka_vamz.data.database.Repository.QuestionRepository
+import com.example.semestralka_vamz.data.database.Repository.StatsRepository
 import com.example.semestralka_vamz.data.database.entity.Question
 import com.example.semestralka_vamz.data.database.entity.Quiz
 import kotlinx.coroutines.delay
@@ -50,9 +51,12 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val questionRepository = QuestionRepository(db.questionDao())
+    val statsRepository = StatsRepository(db.userStatsDao())
+
     var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) }
     var nCorrect by remember { mutableStateOf(0) }
     var currentQuestionIndex by remember { mutableStateOf(0) }
+
 
     var showWelcomeMessage by remember { mutableStateOf(true) }
 
@@ -138,6 +142,10 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                     )
                 } else if (questionsList.isNotEmpty()) {
                     onDoneClick(nCorrect, questionsList.size)
+                    val isPerfect = nCorrect == questionsList.size
+                    LaunchedEffect(Unit) {
+                        statsRepository.updateStats(nCorrect, questionsList.size, isPerfect)
+                    }
                 }
             }
 

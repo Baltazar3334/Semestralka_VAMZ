@@ -1,6 +1,5 @@
 package com.example.semestralka_vamz.ui
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,11 +25,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -74,6 +77,8 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
     val db = AppDatabase.getDatabase(context)
     val quizRepository = QuizRepository(db.quizDao())
     val questionRepository = QuestionRepository(db.questionDao())
+
+
 
     BackHandler {
         onHomeClick()
@@ -120,12 +125,10 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF0F0F0))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF0F0F0))
                 .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -139,6 +142,17 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                     value = quizName,
                     onValueChange = { quizName = it },
                     label = { Text("Meno") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color(0xFF000000),
+                        unfocusedTextColor = Color(0xFF000000),
+                        cursorColor = Color(0xFF1E3A8A),
+                        focusedBorderColor = Color(0xFF1E3A8A),
+                        unfocusedBorderColor = Color(0x80274690),
+                        focusedLabelColor = Color(0xFF1E3A8A),
+                        unfocusedLabelColor = Color(0xFF000000),
+                        focusedContainerColor = Color(0xFFFFFFFF),
+                        unfocusedContainerColor = Color(0xFFFFFFFF)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { keyboardController?.show() }
@@ -151,7 +165,15 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                 ) {
                     Switch(
                         checked = isTimeLimitEnabled,
-                        onCheckedChange = { isTimeLimitEnabled = it }
+                        onCheckedChange = { isTimeLimitEnabled = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF1E3A8A),
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFFCCCCCC),
+                            uncheckedBorderColor = Color(0xFF888888),
+                            checkedBorderColor = Color(0xFF1E3A8A)
+                        )
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text("Časové obmedzenie")
@@ -270,9 +292,12 @@ fun QuestionItem(
             modifier = Modifier.
             fillMaxWidth()
                 .padding(4.dp)
-                .height(40.dp),
+                .height(60.dp),
             shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(7.dp)
+            elevation = CardDefaults.cardElevation(7.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            )
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -294,7 +319,10 @@ fun QuestionItem(
                 .fillMaxWidth()
                 .padding(4.dp),
             shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(7.dp)
+            elevation = CardDefaults.cardElevation(7.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            )
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(
@@ -311,7 +339,18 @@ fun QuestionItem(
                         label = { Text("Otazka") },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { keyboardController?.show() }
+                            .clickable { keyboardController?.show() },
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF000000),
+                            unfocusedTextColor = Color(0xFF000000),
+                            cursorColor = Color(0xFF1E3A8A),
+                            focusedIndicatorColor = Color(0xFF1E3A8A),
+                            unfocusedIndicatorColor = Color(0x80274690),
+                            focusedLabelColor = Color(0xFF1E3A8A),
+                            unfocusedLabelColor = Color(0xFF000000),
+                            focusedContainerColor = Color(0xFFFFFFFF),
+                            unfocusedContainerColor = Color(0xFFFFFFFF)
+                        ),
                     )
                 }
                 Row(
@@ -319,14 +358,25 @@ fun QuestionItem(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start
                 ) {
-                    Text("○", fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(end = 8.dp))
+                    Text("○", fontSize = 20.sp, modifier = Modifier.padding(end = 8.dp))
                     TextField(
                         value = data.correctAnswer.value,
                         onValueChange = { data.correctAnswer.value = it },
                         label = { Text("Správna odpoveď") },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { keyboardController?.show() }
+                            .clickable { keyboardController?.show() },
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF000000),
+                            unfocusedTextColor = Color(0xFF000000),
+                            cursorColor = Color(0xFF1E3A8A),
+                            focusedIndicatorColor = Color(0xFF1E3A8A),
+                            unfocusedIndicatorColor = Color(0x80274690),
+                            focusedLabelColor = Color(0xFF1E3A8A),
+                            unfocusedLabelColor = Color(0xFF000000),
+                            focusedContainerColor = Color(0xFFFFFFFF),
+                            unfocusedContainerColor = Color(0xFFFFFFFF)
+                        ),
                     )
                 }
                 data.answers.forEachIndexed { index, answer ->
@@ -335,7 +385,7 @@ fun QuestionItem(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Start
                     ) {
-                        Text("○", fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(end = 8.dp))
+                        Text("○", fontSize = 20.sp, modifier = Modifier.padding(end = 8.dp))
                         TextField(
                             value = answer,
                             onValueChange = {
@@ -344,7 +394,18 @@ fun QuestionItem(
                             label = { Text("Odpoveď ${index + 1}") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { keyboardController?.show() }
+                                .clickable { keyboardController?.show() },
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color(0xFF000000),
+                                unfocusedTextColor = Color(0xFF000000),
+                                cursorColor = Color(0xFF1E3A8A),
+                                focusedIndicatorColor = Color(0xFF1E3A8A),
+                                unfocusedIndicatorColor = Color(0x80274690),
+                                focusedLabelColor = Color(0xFF1E3A8A),
+                                unfocusedLabelColor = Color(0xFF000000),
+                                focusedContainerColor = Color(0xFFFFFFFF),
+                                unfocusedContainerColor = Color(0xFFFFFFFF)
+                            ),
                         )
                     }
                 }
