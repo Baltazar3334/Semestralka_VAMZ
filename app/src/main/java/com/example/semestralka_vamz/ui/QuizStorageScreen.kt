@@ -96,7 +96,7 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
 
-                QuizSection(title = "Basic", quizList, onPlayClick, onAlterClick)
+                QuizSection(title = "Všetky kvízy", quizList, onPlayClick, onAlterClick)
                 Spacer(modifier = Modifier.weight(1f))
 
             }
