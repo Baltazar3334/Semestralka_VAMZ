@@ -96,7 +96,7 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
 
-                QuizSection(title = "Všetky kvízy", quizList, onPlayClick, onAlterClick)
+                QuizSection(title = "Všetky kvízy", quizList, onPlayClick, onAlterClick, true)
                 Spacer(modifier = Modifier.weight(1f))
 
             }
@@ -121,7 +121,7 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
 }
 
 @Composable
-fun QuizSection(title: String,quizzes: List<Quiz>,onPlayClick: (Quiz) -> Unit,onAlterClick: (Quiz) -> Unit) {
+fun QuizSection(title: String,quizzes: List<Quiz>,onPlayClick: (Quiz) -> Unit,onAlterClick: (Quiz) -> Unit, showAlter: Boolean) {
     var colapsed by remember { mutableStateOf(false) }
 
 
@@ -149,19 +149,34 @@ fun QuizSection(title: String,quizzes: List<Quiz>,onPlayClick: (Quiz) -> Unit,on
         }
 
         if (!colapsed) {
-            sortedQuizzes.forEach { quiz ->
-                QuizItem(
-                    kviz = quiz,
-                    onPlayClick = onPlayClick,
-                    onAlterClick = onAlterClick
-                )
+            if (showAlter) {
+                sortedQuizzes.forEach { quiz ->
+                    QuizItem(
+                        kviz = quiz,
+                        onPlayClick = onPlayClick,
+                        onAlterClick = onAlterClick,
+                        true
+
+                        )
+                }
+            } else {
+                sortedQuizzes.forEach { quiz ->
+                    QuizItem(
+                        kviz = quiz,
+                        onPlayClick = onPlayClick,
+                        onAlterClick = onAlterClick,
+                        false
+
+                    )
+                }
             }
+
         }
     }
 }
 
 @Composable
-fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit) {
+fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit, showAlter: Boolean) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val quizRepository = QuizRepository(db.quizDao())
@@ -206,8 +221,10 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
             IconButton(onClick = { showDeleteDialog = true } ) {
                 Icon(Icons.Default.Delete, contentDescription = "Vymazat")
             }
-            IconButton(onClick = { onAlterClick(kviz) } ) {
-                Icon(Icons.Default.Build, contentDescription = "Upravit")
+            if (showAlter) {
+                IconButton(onClick = { onAlterClick(kviz) } ) {
+                    Icon(Icons.Default.Build, contentDescription = "Upravit")
+                }
             }
             IconButton(onClick = {
                 onPlayClick(kviz)

@@ -363,7 +363,7 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 item {
-                    QuizSection("Obľúbené Kvízy", favouriteQuizzes, onPlayClick) {}
+                    QuizSection("Obľúbené Kvízy", favouriteQuizzes, onPlayClick, onAlterClick = {} , showAlter = false)
                 }
             }
         }
