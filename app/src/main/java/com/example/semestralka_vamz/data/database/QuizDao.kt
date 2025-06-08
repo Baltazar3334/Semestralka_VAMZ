@@ -36,4 +36,9 @@ interface QuizDao {
     @Query("SELECT favourite FROM quiz_table WHERE id = :questionId")
     suspend fun isFavourite(questionId: Long): Boolean
 
+
+    @Query("DELETE FROM quiz_table")
+    suspend fun deleteAll()
+
+
 }

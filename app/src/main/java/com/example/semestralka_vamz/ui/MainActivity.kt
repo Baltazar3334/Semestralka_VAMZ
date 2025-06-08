@@ -101,8 +101,14 @@ class MainActivity : ComponentActivity() {
                                 selectedQuiz = quiz
                                 currentScreen = "playQuiz"
                                 transitionDirection = -1
+                            },
+                            onSettingsClick = {
+                                currentScreen = "settings"
                             }
 
+                        )
+                        "settings" -> SettingsScreen(
+                            onReturnClick = { currentScreen = "menu" }
                         )
                         "finish" -> FinishedQuizScreen(
                             correctAnswers = correctCount,
@@ -203,6 +209,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                 }
+
             }
 
         }
@@ -210,7 +217,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onPlayClick: (Quiz) -> Unit) {
+fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onPlayClick: (Quiz) -> Unit, onSettingsClick: () -> Unit) {
 
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
@@ -316,7 +323,7 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                     modifier = Modifier
                         .height(100.dp)
                         .width(100.dp)
-                        .clickable {  },
+                        .clickable { onSettingsClick() },
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
