@@ -356,7 +356,7 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                 }
             }
             LazyColumn(
-                modifier = Modifier.height(300.dp),
+                modifier = Modifier.height(200.dp),
                 contentPadding = PaddingValues(bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {

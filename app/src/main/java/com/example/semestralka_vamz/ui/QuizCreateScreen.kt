@@ -78,48 +78,44 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
     val quizRepository = QuizRepository(db.quizDao())
     val questionRepository = QuestionRepository(db.questionDao())
 
-
-
     BackHandler { //backhandler aby aplikacia vedela co ma robit ked je stlacene back na telefone
         onHomeClick()
     }
 
 
+    LaunchedEffect(Unit) { // asynchronna operacia na spustenie kodu ktory intereaguje s databazou
+        if (existingQuiz != null) { // ak bola funkcia volana na upravenie nejakeho kvizu tak sa data na obrazovke automaticky vyplnia
+            println("načítal sa quiz")
+            quizName = existingQuiz.title
+            timeLimit = existingQuiz.timeLimit.toFloat()
+            isTimeLimitEnabled = existingQuiz.timeLimitOn
+            questionRepository.getQuestions() // vyberie otazky z databazy ako entity Question
+                .take(1) // zoberie len prvu emisiu flow a potom sa vypne
+                .collect { allQuestions ->
+                    existingQuizQuestions = allQuestions.filter { it.quizId == existingQuiz.id } //filtruje otazky len tie ktore maju QuizId rovnake ako id kvizu z parametrov
 
-
-        LaunchedEffect(Unit) { // asynchronna operacia na spustenie kodu ktory intereaguje s databazou
-            if (existingQuiz != null) { // ak bola funkcia volana na upravenie nejakeho kvizu tak sa data na obrazovke automaticky vyplnia
-                println("načítal sa quiz")
-                quizName = existingQuiz.title
-                timeLimit = existingQuiz.timeLimit.toFloat()
-                isTimeLimitEnabled = existingQuiz.timeLimitOn
-                questionRepository.getQuestions() // vyberie otazky z databazy ako entity Question
-                    .take(1) // zoberie len prvu emisiu flow a potom sa vypne
-                    .collect { allQuestions ->
-                        existingQuizQuestions = allQuestions.filter { it.quizId == existingQuiz.id } //filtruje otazky len tie ktore maju QuizId rovnake ako id kvizu z parametrov
-
-                        questions2.clear()
-                        for (question in existingQuizQuestions) {
-                            val answersList = mutableStateListOf<String>().apply { // pre kazdu otazku sa vytvori zoznam odpovedi
-                                question.answer1?.let { add(it) }
-                                question.answer2?.let { add(it) }
-                                question.answer3?.let { add(it) }
-                            }
-
-                            questions2.add( // nasledne sa otazky aj s odpovedami nahraju do zoznamu questions2 teraz uz ako QuestionData data class instancie
-                                QuestionData(
-                                    title = "Otázka " + questions2.size.toString(),
-                                    question = mutableStateOf(question.question),
-                                    correctAnswer = mutableStateOf(question.correctAnswer),
-                                    answers = answersList,
-                                    isTimeLimitEnabled = mutableStateOf(existingQuiz.timeLimitOn),
-                                    favourite = mutableStateOf(false)
-                                )
-                            )
+                    questions2.clear()
+                    for (question in existingQuizQuestions) {
+                        val answersList = mutableStateListOf<String>().apply { // pre kazdu otazku sa vytvori zoznam odpovedi
+                            question.answer1?.let { add(it) }
+                            question.answer2?.let { add(it) }
+                            question.answer3?.let { add(it) }
                         }
+
+                        questions2.add( // nasledne sa otazky aj s odpovedami nahraju do zoznamu questions2 teraz uz ako QuestionData data class instancie
+                            QuestionData(
+                                title = "Otázka " + questions2.size.toString(),
+                                question = mutableStateOf(question.question),
+                                correctAnswer = mutableStateOf(question.correctAnswer),
+                                answers = answersList,
+                                isTimeLimitEnabled = mutableStateOf(existingQuiz.timeLimitOn),
+                                favourite = mutableStateOf(false)
+                            )
+                        )
                     }
-            }
+                }
         }
+    }
 
 
     Box(
@@ -134,7 +130,7 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
         ) {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState())
-                    .padding(0.dp, 0.dp, 0.dp, 25.dp),
+                    .padding(0.dp, 20.dp, 0.dp, 25.dp),
                 verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
 
