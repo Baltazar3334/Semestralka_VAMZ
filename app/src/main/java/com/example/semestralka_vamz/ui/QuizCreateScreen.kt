@@ -1,5 +1,11 @@
 package com.example.semestralka_vamz.ui
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +27,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -45,12 +52,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.example.semestralka_vamz.data.database.AppDatabase
 import com.example.semestralka_vamz.data.database.Repository.QuestionRepository
 import com.example.semestralka_vamz.data.database.Repository.QuizRepository
@@ -65,15 +74,31 @@ import kotlinx.coroutines.launch
 @Composable
 fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onHomeClickNoPopUp: () -> Unit) {
     // obrazovka pre vytvaranie kvizov alebo upravu kvizov, hodnoty kvizu sa ukladaju ako premenne a nasledne sa nahravaju do databazy v celku
+    val context = LocalContext.current // pristup do databazy kvizov a otazok
     var quizName by remember { mutableStateOf("") } //meno kvizu
     var timeLimit by remember { mutableStateOf(0f) } // casove obmedzenie kvizu
     val keyboardController = LocalSoftwareKeyboardController.current // ovladac pre klavesnicu, aby sa dala otvorit
     var isTimeLimitEnabled by remember { mutableStateOf(false) } // hodnota ci je kviz casovo obmedzeny
     val questions2 = remember { mutableStateListOf<QuestionData>() } // zoznam otazok tohto kvizu
 
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) } // premenna na zapisanie obrazku
+
+    val contentResolver = context.contentResolver // na pristup k obsahu zariadenia(obrazkom ku ktorým pristupuje aplikacia)
+    val imagePicker = rememberLauncherForActivityResult( //image picker je launcher na vybratie obrazku
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri -> //Uri je odkaz na obrazok v zariadeni
+        uri?.let {
+            contentResolver.takePersistableUriPermission( // ziada pristup k obrazkom zariadenia pred ulozenim obrazku do premennej
+                it,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        }
+        selectedImageUri = uri // uklada odkaz obrazku na premennu
+    }
+
     var existingQuizQuestions by remember { mutableStateOf<List<Question>>(emptyList()) } // zoznam otazok ak je obrazovka nacitana uz s existujucim kvizom
 
-    val context = LocalContext.current // pristup do databazy kvizov a otazok
+
     val db = AppDatabase.getDatabase(context)
     val quizRepository = QuizRepository(db.quizDao())
     val questionRepository = QuestionRepository(db.questionDao())
@@ -89,6 +114,7 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
             quizName = existingQuiz.title
             timeLimit = existingQuiz.timeLimit.toFloat()
             isTimeLimitEnabled = existingQuiz.timeLimitOn
+            selectedImageUri = existingQuiz.imageUri?.let { Uri.parse(it) } //nacitanie obrazku ak existingQuiz uz nejaky má
             questionRepository.getQuestions() // vyberie otazky z databazy ako entity Question
                 .take(1) // zoberie len prvu emisiu flow a potom sa vypne
                 .collect { allQuestions ->
@@ -173,7 +199,27 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text("Časové obmedzenie")
-
+                    Spacer(modifier = Modifier.width(20.dp))
+                    Button( // tlacidlo na vybratie obrazku ku kvizu
+                        onClick = {
+                            imagePicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly) // po kliknuti sa spusti image picker, image only znamena ze sa da vybrat len obrazok
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().height(60.dp)
+                    ) {
+                        Text("Nahrať obrázok", )
+                    }
+                }
+                selectedImageUri?.let { uri -> // zobrazenie vybrateho obrazku  len ak bol obrazok vybraty
+                    Image(
+                        painter = rememberAsyncImagePainter(uri), //nacitanie obrazku z Uri
+                        contentDescription = "Obrázok ku kvízu",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
                 }
 
                 if (isTimeLimitEnabled) { //logika pre zobrazovanie posuvnika pre casove obmedzenie
@@ -225,21 +271,39 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                                 )
                                 if(existingQuiz != null) { // if podmienka pre to ci sa ma vytvorit novy kviz alebo len upravit uz existujuci kviz, spravuje to nepovinnym parametrom
                                     IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch { //tlacidlo na ulozenie kvizu do databazy vyvola funkciu saveQuizAndQuestions
-                                        saveQuizAndQuestions(                                      // tlacidlo vyvolava coroutine ktora spravuje interakcie medzi databazou a funkciou cez Dispatcher.IO
-                                            quizName, timeLimit, isTimeLimitEnabled,
-                                            questions2, quizRepository, questionRepository, false, existingQuiz
-                                        )
-                                        onHomeClickNoPopUp() // nasledne sa obrazovka zmeni na uvodne menu
+                                        if (selectedImageUri != null) {
+                                            saveQuizAndQuestions(                                      // tlacidlo vyvolava coroutine ktora spravuje interakcie medzi databazou a funkciou cez Dispatcher.IO
+                                                quizName, timeLimit, isTimeLimitEnabled,
+                                                questions2, quizRepository, questionRepository, false, existingQuiz, selectedImageUri
+                                            )
+                                            onHomeClickNoPopUp() // nasledne sa obrazovka zmeni na uvodne menu
+                                        } else {
+                                            saveQuizAndQuestions(                                      // tlacidlo vyvolava coroutine ktora spravuje interakcie medzi databazou a funkciou cez Dispatcher.IO
+                                                quizName, timeLimit, isTimeLimitEnabled,
+                                                questions2, quizRepository, questionRepository, false, existingQuiz
+                                            )
+                                            onHomeClickNoPopUp() // nasledne sa obrazovka zmeni na uvodne menu
+                                        }
+
                                     } } ) {
                                         Icon(Icons.Default.Send, contentDescription = "Finish quiz")
                                     }
                                 } else {
                                     IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch {
-                                        saveQuizAndQuestions(
-                                            quizName, timeLimit, isTimeLimitEnabled,
-                                            questions2, quizRepository, questionRepository, false
-                                        )
-                                        onHomeClickNoPopUp()
+                                        if (selectedImageUri != null) {
+                                            saveQuizAndQuestions(
+                                                quizName, timeLimit, isTimeLimitEnabled,
+                                                questions2, quizRepository, questionRepository, false, existingQuiz = null, selectedImageUri
+                                            )
+                                            onHomeClickNoPopUp()
+                                        } else {
+                                            saveQuizAndQuestions(
+                                                quizName, timeLimit, isTimeLimitEnabled,
+                                                questions2, quizRepository, questionRepository, false
+                                            )
+                                            onHomeClickNoPopUp()
+                                        }
+
                                     } } ) {
                                         Icon(Icons.Default.Send, contentDescription = "Finish quiz")
                                     }
@@ -439,7 +503,8 @@ suspend fun saveQuizAndQuestions(
     quizRepository: QuizRepository,
     questionRepository: QuestionRepository,
     favourite: Boolean,
-    existingQuiz: Quiz? = null
+    existingQuiz: Quiz? = null,
+    quizImage: Uri? = null
 ) {
     //funkcia sluzi na ulozenie dat kvizu do databazy, podla nepovinneho parametru sa rozhoduje ci musi najskor odstranit nejaky kviz a potom ho nahradit alebo ci len pridava novy kviz do DB
     if (existingQuiz != null) {
@@ -449,8 +514,10 @@ suspend fun saveQuizAndQuestions(
         title = quizName,
         timeLimit = timeLimit.toInt(),
         timeLimitOn = isTimeLimitEnabled,
-        favourite = favourite
+        favourite = favourite,
+        imageUri = quizImage?.toString()
     )
+
     val newQuizId = quizRepository.addQuizReturningId(newQuiz)
     questions.forEach { data ->
         val question = Question(
@@ -473,5 +540,6 @@ data class QuestionData( //data class pre otazky v tomto screene pouziva sa pre 
     var correctAnswer: MutableState<String> = mutableStateOf(""),
     var answers: SnapshotStateList<String> = mutableStateListOf(""),
     var isTimeLimitEnabled: MutableState<Boolean> = mutableStateOf(true),
-    var favourite: MutableState<Boolean> = mutableStateOf(false)
+    var favourite: MutableState<Boolean> = mutableStateOf(false),
+    var QuizImage :Uri? = null
 )

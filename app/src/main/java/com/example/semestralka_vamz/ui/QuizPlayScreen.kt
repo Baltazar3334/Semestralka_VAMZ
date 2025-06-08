@@ -1,5 +1,6 @@
 package com.example.semestralka_vamz.ui
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,11 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.semestralka_vamz.data.database.AppDatabase
 import com.example.semestralka_vamz.data.database.Repository.QuestionRepository
 import com.example.semestralka_vamz.data.database.Repository.StatsRepository
@@ -56,6 +59,7 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
     var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) } // zoznam otazok
     var nCorrect by remember { mutableStateOf(0) } //pocet spravne zodpovedanych otazok
     var currentQuestionIndex by remember { mutableStateOf(0) } // index na ktrej otazke sa prave uzivatel nachadza
+
 
     var showWelcomeMessage by remember { mutableStateOf(true) } // pomocny boolean pre zobrazenie welcome message
 
@@ -120,12 +124,11 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                             )
                             Spacer(modifier = Modifier.height(28.dp))
                             Text(
-                                text = "Na kvíz máte ${quiz.timeLimit}m",
+                                text = "Na kvíz máte ${quiz.timeLimit}min",
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
-
                     } else {
                         Text(
                             text = "Veľa šťastia!",
@@ -152,6 +155,21 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Späť")
                 }
+
+                val imageUri = quiz.imageUri?.let { Uri.parse(it) } // nacitanie Uri obrazku z DB
+                if (imageUri != null) {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = "Obrázok kvízu",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 if (!showWelcomeMessage && questionsList.isNotEmpty()) {
                     val progress = (currentQuestionIndex + 1).toFloat() / questionsList.size.toFloat()
 
@@ -203,8 +221,10 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                         statsRepository.updateStats(nCorrect, questionsList.size, isPerfect, quiz.id)
                     }
                 }
+
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

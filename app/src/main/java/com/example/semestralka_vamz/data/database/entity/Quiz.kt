@@ -10,6 +10,7 @@ data class Quiz(
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "timeLimit") val timeLimit: Int,
     @ColumnInfo(name = "timeLimitOn") val timeLimitOn: Boolean,
-    @ColumnInfo(name = "favourite") val favourite: Boolean
+    @ColumnInfo(name = "favourite") val favourite: Boolean,
+    @ColumnInfo(name = "imageUri") val imageUri: String? = null
 
 )

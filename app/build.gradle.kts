@@ -62,5 +62,6 @@ dependencies {
 
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
+    implementation("io.coil-kt:coil-compose:2.4.0")
     kapt("androidx.room:room-compiler:$room_version")
 }
