@@ -50,24 +50,24 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit) {
-
-    val context = LocalContext.current
+        // funkcia sa pouziva na zobrazenie lozenych kvizov v DB a ich uprava/spustenie/vymazanie/pridanie do favourite
+    val context = LocalContext.current // kontext na pracovanie s DB
     val db = AppDatabase.getDatabase(context)
     val quizRepository = QuizRepository(db.quizDao())
-    val questionRepository = QuestionRepository(db.questionDao())
+    val questionRepository = QuestionRepository(db.questionDao()) // pristup k DB cez repozitar
 
-    val quizList0 = quizRepository.getQuizzes()
-    var quizList by remember { mutableStateOf<List<Quiz>>(emptyList()) }
+    val quizList0 = quizRepository.getQuizzes() // list kvizov ulozeny z DB
+    var quizList by remember { mutableStateOf<List<Quiz>>(emptyList()) } // list kvizov pre pracvovanie s composable
 
-    val questionsList0 = questionRepository.getQuestions()
-    var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) }
+    val questionsList0 = questionRepository.getQuestions() // list otazok ulozeny z DB
+    var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) } // list otazok pre pracovanie s composable
 
-    LaunchedEffect(questionsList0) {
+    LaunchedEffect(questionsList0) { // zapisanie otazok do questionList cez asynchronnu operaciu
         questionsList0.collect { question ->
             questionsList = question
         }
     }
-    LaunchedEffect(quizList0) {
+    LaunchedEffect(quizList0) { // zapisanie kvizov co quizList cez asynchronnu operaciu
         quizList0.collect { quiz ->
             quizList = quiz
         }
@@ -96,7 +96,7 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
 
-                QuizSection(title = "Všetky kvízy", quizList, onPlayClick, onAlterClick, true)
+                QuizSection(title = "Všetky kvízy", quizList, onPlayClick, onAlterClick, true) // vytvorenie QuizSection pre oddelenie kvizov
                 Spacer(modifier = Modifier.weight(1f))
 
             }
@@ -107,7 +107,7 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
         ) {
-            BottomNavigationBar(
+            BottomNavigationBar( // vyvolanie bottom navigation baru
                 onEditClick = onEditClick,
                 onHomeClick = onHomeClick,
                 onStorageClick = onStorageClick
@@ -115,17 +115,18 @@ fun QuizStorageScreen( onEditClick: () -> Unit, onHomeClick: () -> Unit, onStora
         }
     }
 
-    BackHandler {
+    BackHandler { // handlovanie vracania sa
         onHomeClick()
     }
 }
 
 @Composable
 fun QuizSection(title: String,quizzes: List<Quiz>,onPlayClick: (Quiz) -> Unit,onAlterClick: (Quiz) -> Unit, showAlter: Boolean) {
-    var colapsed by remember { mutableStateOf(false) }
+            // funkcia umoznuje zobrazovanie sekcii kvizov pre doplnenie roznych sekcii v buducnosti
+    var colapsed by remember { mutableStateOf(false) } //boolean premenna pre pracu s zavretim a otvorenim sekcie
 
 
-    val sortedQuizzes = remember(quizzes) {
+    val sortedQuizzes = remember(quizzes) { // zoradenie kvizov podla toho ci su favourite alebo nie remember pre ulozenie kvizov zo zoznamu len ak sa kvizy zmenia zo strany DB
         quizzes.sortedByDescending { it.favourite }
     }
 
@@ -140,7 +141,7 @@ fun QuizSection(title: String,quizzes: List<Quiz>,onPlayClick: (Quiz) -> Unit,on
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = { colapsed = !colapsed }) {
+            IconButton(onClick = { colapsed = !colapsed }) { // tlacidlo na zmenu ci je sekcia colapsed alebo nie
                 Icon(
                     if (colapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
                     contentDescription = if (colapsed) "Expand" else "Collapse"
@@ -148,14 +149,14 @@ fun QuizSection(title: String,quizzes: List<Quiz>,onPlayClick: (Quiz) -> Unit,on
             }
         }
 
-        if (!colapsed) {
-            if (showAlter) {
+        if (!colapsed) { // logika na spravovanie ci je sekcia colapsed alebo nie
+            if (showAlter) { // logika na to ci sa ma zobrazovat aj tlacidlo na upravu kvizu(v menu sa nezobrazuje len v storage screene)
                 sortedQuizzes.forEach { quiz ->
                     QuizItem(
                         kviz = quiz,
                         onPlayClick = onPlayClick,
                         onAlterClick = onAlterClick,
-                        true
+                        true // premenna ktora zobrazovanie tlacidla spravuje
 
                         )
                 }
@@ -177,11 +178,11 @@ fun QuizSection(title: String,quizzes: List<Quiz>,onPlayClick: (Quiz) -> Unit,on
 
 @Composable
 fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Unit, showAlter: Boolean) {
-    val context = LocalContext.current
+    val context = LocalContext.current // kontext na spravovanie DB
     val db = AppDatabase.getDatabase(context)
-    val quizRepository = QuizRepository(db.quizDao())
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
+    val quizRepository = QuizRepository(db.quizDao()) // pristup do kvizov v DB cez repozitar
+    var showDeleteDialog by remember { mutableStateOf(false) } // boolean na pracu so zobrazovanim delete dialogu pri vymazani kvizu
+    //funckia sluziaca na zobrazenie jednotlivych kvizov do tabulky
 
 
     Card(
@@ -200,8 +201,8 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            IconButton(onClick = {
-                CoroutineScope(Dispatchers.IO).launch {
+            IconButton(onClick = { // button na pridanie alebo odobratie z favourite, meni ikonku na zaklade toho ci je favourite
+                CoroutineScope(Dispatchers.IO).launch { // coroutine na pracu s hodnotou favourite v DB a zmenu UI podla toho
                     val newValue = !kviz.favourite
                     db.quizDao().updateFavourite(kviz.id, newValue)
                 }
@@ -218,27 +219,27 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
                 Text(text = kviz.title)
 
             }
-            IconButton(onClick = { showDeleteDialog = true } ) {
+            IconButton(onClick = { showDeleteDialog = true } ) { // tlacidlo na vymazanie kvizu
                 Icon(Icons.Default.Delete, contentDescription = "Vymazat")
             }
             if (showAlter) {
-                IconButton(onClick = { onAlterClick(kviz) } ) {
+                IconButton(onClick = { onAlterClick(kviz) } ) { // tlacidlo na upravenie kvizu, spusti QuizCreateScreen s tymto kvizom ako parametrom
                     Icon(Icons.Default.Build, contentDescription = "Upravit")
                 }
             }
-            IconButton(onClick = {
+            IconButton(onClick = { // spusti screen QuizPlayScreen s tymto kvizom ako parametrom
                 onPlayClick(kviz)
             } ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "hratKviz")
             }
         }
     }
-    if (showDeleteDialog) {
+    if (showDeleteDialog) { // logika ktora spravuje popup message pri vymazavani kvizu
         DeleteDialog(
             onDismiss = { showDeleteDialog = false },
             onConfirm = {
                 showDeleteDialog = false
-                CoroutineScope(Dispatchers.IO).launch {
+                CoroutineScope(Dispatchers.IO).launch { // coroutine pre vymazanie kvizu z DB
                     quizRepository.deleteQuizById(kviz.id)
                 }
             }
@@ -248,6 +249,7 @@ fun QuizItem(kviz: Quiz, onPlayClick: (Quiz) -> Unit, onAlterClick: (Quiz) -> Un
 
 @Composable
 fun DeleteDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    // funckia na zobrazenie popup okna pri vymazavani kvizu
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Naozaj chcete vymazať tento Kvíz?") },

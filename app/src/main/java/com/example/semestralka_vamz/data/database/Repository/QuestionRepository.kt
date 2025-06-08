@@ -11,11 +11,8 @@ class QuestionRepository(private val questionDao: QuestionDao) {
         return allQuestions
     }
 
-
-
     suspend fun addQuestion(question: Question) {
         questionDao.insert(question)
     }
-
 
 }

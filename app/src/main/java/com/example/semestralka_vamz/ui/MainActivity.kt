@@ -61,7 +61,7 @@ import com.example.semestralka_vamz.data.database.Repository.StatsRepository
 import com.example.semestralka_vamz.data.database.entity.Quiz
 import com.example.semestralka_vamz.ui.theme.SemestralkaTheme
 
-
+//Hlavná trieda ktorá prepína medzi obrazovkami
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,13 +69,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SemestralkaTheme {
-                var currentScreen by remember { mutableStateOf("menu") }
-                var showExitDialog by remember { mutableStateOf(false) }
-                var showExitDialogToDatabase by remember { mutableStateOf(false) }
-                var selectedQuiz by remember { mutableStateOf<Quiz?>(null) }
-                var transitionDirection by remember { mutableStateOf(1) }
-                var correctCount by remember { mutableStateOf(0) }
-                var totalCount by remember { mutableStateOf(0) }
+                var currentScreen by remember { mutableStateOf("menu") } //obrazovka na ktorej sa aplikacia nachadza
+                var showExitDialog by remember { mutableStateOf(false) } // na zobrazenie popup exit
+                var showExitDialogToDatabase by remember { mutableStateOf(false) } // popup pre exit z databazy
+                var selectedQuiz by remember { mutableStateOf<Quiz?>(null) } //kviz ktorý je aktualne vybraty v aplikacia(napr. na vyplnenie)
+                var transitionDirection by remember { mutableStateOf(1) } //-1 alebo 1, mení smer do ktorého sa prechod posúva
+                var correctCount by remember { mutableStateOf(0) } // pocet spravnych odpovedí
+                var totalCount by remember { mutableStateOf(0) } // pocet nespravnych odpovedí
 
                 AnimatedContent(
                     targetState = currentScreen,
@@ -85,10 +85,10 @@ class MainActivity : ComponentActivity() {
                     },
                     label = "Screen Transition"
                 ) { screen ->
-                    when (screen) {
+                    when (screen) {    //logika menenia obrazoviek na zaklade premennej currentScreen
                         "menu" -> MenuScreen(
-                            onEditClick = {
-                                selectedQuiz = null
+                            onEditClick = {   // po spusteni tohto onClick sa spustia tieto prikazy
+                                selectedQuiz = null // null pre to aby sa hodnota vynulovala pri prechode na iny screen
                                 currentScreen = "createQuiz"
                                 transitionDirection = 1
                             },
@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
                                 transitionDirection = -1
                             },
                             onPlayClick = { quiz ->
-                                selectedQuiz = quiz
+                                selectedQuiz = quiz // tu sa selected quiz, ktorý je priradený podla QuizItem na ktorý klikneme, spusti cez playQuiz
                                 currentScreen = "playQuiz"
                                 transitionDirection = -1
                             },
@@ -188,7 +188,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                if (showExitDialog) {
+                if (showExitDialog) {  //logika aby pri urcitych obrazovkach sa nedalo nahodou odist bez potvrdenia
                     if (!showExitDialogToDatabase) {
                         ExitDialog(
                             onDismiss = { showExitDialog = false },
@@ -197,7 +197,7 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = "menu"
                             }
                         )
-                    } else {
+                    } else { //dva boolean aby pri stlaceni homescreen sa slo na homescreen a pri stlaceni storage sa slo na storage screen
                         ExitDialog(
                             onDismiss = { showExitDialog = false },
                             onConfirm = {
@@ -218,17 +218,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onPlayClick: (Quiz) -> Unit, onSettingsClick: () -> Unit) {
-
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
+ // obrazovka zakladného menu ktoré sa zobrazi ked sa otvori aplikacia
+    val context = LocalContext.current // context pre pracovanie s databázou
+    val db = AppDatabase.getDatabase(context) // vyvolanie databazy a jendotlivých repozitárov
     val statsRepository = StatsRepository(db.userStatsDao())
     val quizRepository = QuizRepository(db.quizDao())
-    val statsState by statsRepository.statsFlow.collectAsState(initial = null)
-    val stats = statsState
-    val allQuizzes by quizRepository.getQuizzes().collectAsState(initial = emptyList())
-    val lastQuiz = allQuizzes.find { it.id == statsState?.lastQuizId }
-    val activity = (LocalContext.current as? Activity)
-    val favouriteQuizzes = allQuizzes.filter { it.favourite }
+    val statsState by statsRepository.statsFlow.collectAsState(initial = null) //nacitanie flow statistik do hodnoty
+    val stats = statsState //prepis do hodnoty pre lahsiu pracu
+    val allQuizzes by quizRepository.getQuizzes().collectAsState(initial = emptyList()) // nacitanie kvizov do hodnoty
+    val lastQuiz = allQuizzes.find { it.id == statsState?.lastQuizId } // vyfiltrovanie posledneho kvízu
+    val activity = (LocalContext.current as? Activity) // ulozenie aktualnej aktivity pre tlacidlo exit
+    val favouriteQuizzes = allQuizzes.filter { it.favourite } // filtrovanie len oblubenych kvizov
 
 
     Column(
@@ -269,14 +269,12 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                         fontSize = 20.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    if (stats == null) {
+                    if (stats == null) {       //logika pre zapisovanie statistik o uzivatelovi
                         Text("Žiadne údaje zatiaľ nie sú dostupné.")
                     } else {
                         val successRate = if (stats.totalQuestionsAnswered > 0)
                             (stats.totalCorrectAnswers * 100 / stats.totalQuestionsAnswered)
                         else 0
-
                         Text("Dokončené kvízy: ${stats.totalQuizzesCompleted}")
                         Text("Perfektné skóre: ${stats.perfectScores}")
                         Text("Úspešnosť: $successRate %")
@@ -287,7 +285,7 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(1.dp)
-                    .clickable(enabled = lastQuiz != null)
+                    .clickable(enabled = lastQuiz != null)  //  aby sa na kartu s poslednym kvizom dalo kliknut a zapnut ten kviz
                     { lastQuiz?.let { onPlayClick(it) } },
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 shape = RoundedCornerShape(16.dp),
@@ -304,7 +302,7 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                         fontSize = 20.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    if (lastQuiz != null) {
+                    if (lastQuiz != null) {         // logika pre zobrazenie posledneho kvizu ktory bol zapnuty
                         Text(lastQuiz.title)
                     } else {
                         Text("Nemáte posledný dokončený kvíz.")
@@ -323,7 +321,7 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                     modifier = Modifier
                         .height(100.dp)
                         .width(100.dp)
-                        .clickable { onSettingsClick() },
+                        .clickable { onSettingsClick() },   //povolene klinutie na tlacidlo settings ktore meni obrazovku
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
@@ -342,7 +340,7 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                     modifier = Modifier
                         .height(100.dp)
                         .width(100.dp)
-                        .clickable { activity?.finish() },
+                        .clickable { activity?.finish() }, // tlacidlo EXIT ktore vypne aktivity a kedze to je main activity tak sa vypne aplikacia
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
@@ -367,12 +365,13 @@ fun MenuScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick:
                 }
             }
         }
-        BottomNavigationBar(onEditClick = onEditClick, onHomeClick = onHomeClick, onStorageClick = onStorageClick)
+        BottomNavigationBar(onEditClick = onEditClick, onHomeClick = onHomeClick, onStorageClick = onStorageClick) // vyvolanie dolneho navygacneho baru
     }
 }
 
 @Composable
 fun BottomNavigationBar(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit) {
+    //navygacny bar na dolnej strane obrazovky
     Surface(
         tonalElevation = 10.dp,
         shadowElevation = 18.dp,
@@ -390,7 +389,7 @@ fun BottomNavigationBar(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStor
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { onStorageClick() }) {
+            IconButton(onClick = { onStorageClick() }) {    // tlacidla na liste ktore menia obrazovku
                 Icon(
                     Icons.Default.Person,
                     contentDescription = "Documents",
@@ -417,6 +416,7 @@ fun BottomNavigationBar(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStor
 
 @Composable
 fun ExitDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    //exit dialog pre odchod zo screenu, aktivuje sa len pre urcite screeny
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Naozaj chcete odísť?") },

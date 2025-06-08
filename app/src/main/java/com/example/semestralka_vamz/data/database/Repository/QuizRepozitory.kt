@@ -19,6 +19,4 @@ class QuizRepository(private val quizDao: QuizDao) {
         quizDao.deleteQuizById(id)
     }
 
-
-
 }

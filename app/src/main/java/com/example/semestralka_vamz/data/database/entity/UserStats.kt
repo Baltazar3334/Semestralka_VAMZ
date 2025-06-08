@@ -2,7 +2,7 @@ package com.example.semestralka_vamz.data.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-
+//Entita Štatistika uživatela
 @Entity
 data class UserStats(
     @PrimaryKey val id: Int = 0,

@@ -43,8 +43,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen (onReturnClick: () -> Unit, context: Context = LocalContext.current) {
-    var showDBDeleteDialog by remember { mutableStateOf(false) }
-    val db = remember { AppDatabase.getDatabase(context) }
+    //jednoducha funkcia na zobrazenie obrazovky nastaveni
+    var showDBDeleteDialog by remember { mutableStateOf(false) } // boolean na spravovanie popup okna pri vymazavani DB
+    val db = remember { AppDatabase.getDatabase(context) } // pristup k db
     val coroutineScope = rememberCoroutineScope()
 
     Column(
@@ -60,7 +61,7 @@ fun SettingsScreen (onReturnClick: () -> Unit, context: Context = LocalContext.c
         Row (
             horizontalArrangement = Arrangement.Start
         ) {
-            IconButton(onClick = onReturnClick) {
+            IconButton(onClick = onReturnClick) { // tlacidlo na vratenie do menu
                 Icon(Icons.Default.ArrowBack, contentDescription = "Späť", modifier = Modifier.size(40.dp))
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -75,7 +76,7 @@ fun SettingsScreen (onReturnClick: () -> Unit, context: Context = LocalContext.c
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(10.dp)
-                .clickable { showDBDeleteDialog = true },
+                .clickable { showDBDeleteDialog = true }, // tlacidlo ktore zmeni boolean na otvorenie delete DB okna
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
@@ -100,7 +101,7 @@ fun SettingsScreen (onReturnClick: () -> Unit, context: Context = LocalContext.c
         )
     }
 
-    if (showDBDeleteDialog) {
+    if (showDBDeleteDialog) { // logika na soravivabue DB dialog okna
         DeleteDBDialog(
             onConfirm = {
                 showDBDeleteDialog = false
@@ -117,13 +118,14 @@ fun SettingsScreen (onReturnClick: () -> Unit, context: Context = LocalContext.c
 
 @Composable
 fun DeleteDBDialog(
+    //jednoducha funkcia na vytvorenie okna pre vymazavanie DB
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Naozaj chcete vymazať databázu kvízov?") },
-        text = { Text("Vaše zmeny sa nebudú dať vrátiť.") },
+        text = { Text("Vaše zmeny sa nebudú dať vrátiť a budú vymazané vaše Kvízy a štatistiky.") },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text("Áno")

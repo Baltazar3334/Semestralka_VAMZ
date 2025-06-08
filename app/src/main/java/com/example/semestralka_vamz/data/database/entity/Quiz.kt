@@ -3,7 +3,7 @@ package com.example.semestralka_vamz.data.database.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-
+//entita Kvíz
 @Entity(tableName = "quiz_table")
 data class Quiz(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

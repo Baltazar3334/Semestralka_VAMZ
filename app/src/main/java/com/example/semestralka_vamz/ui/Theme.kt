@@ -5,6 +5,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
+//téma celej aplikacie
 private val DarkerBlueColorScheme = lightColorScheme(
     primary = Color(0xFF1E3A8A),
     onPrimary = Color.White,
@@ -17,7 +18,7 @@ private val DarkerBlueColorScheme = lightColorScheme(
     onSurface = Color.Black,
     onError = Color.White
 )
-
+//funkncia na vyvolanie témy
 @Composable
 fun SemestralkaTheme(content: @Composable () -> Unit) {
     MaterialTheme(

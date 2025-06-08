@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 
 class StatsRepository(private val dao: UserStatsDao) {
-
     val statsFlow: Flow<UserStats?> = dao.getStats()
 
     suspend fun updateStats( correct: Int, total: Int, isPerfect: Boolean, quizId: Long) {
@@ -20,4 +19,5 @@ class StatsRepository(private val dao: UserStatsDao) {
         )
         dao.insertStats(updated)
     }
+
 }

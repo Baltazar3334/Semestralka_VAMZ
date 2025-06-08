@@ -47,30 +47,30 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, quiz: Quiz, onBack: () -> Unit, KickOutNoQuiz: () -> Unit, onDoneClick: (correctAnswers: Int, totalQuestions: Int) -> Unit) {
-
-    val context = LocalContext.current
+//composable funkcia na zobrazenie obrazovky pocas hrania kvizu, podla toho ci kviz je validny hraca bud vyhodi naspat alebo spusti kviz a zobrazuje postupne otazky a odpovede
+    val context = LocalContext.current // context pre pracu s DB
     val db = AppDatabase.getDatabase(context)
     val questionRepository = QuestionRepository(db.questionDao())
-    val statsRepository = StatsRepository(db.userStatsDao())
+    val statsRepository = StatsRepository(db.userStatsDao()) //prustup k databaze cez repozitar stats a question
 
-    var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) }
-    var nCorrect by remember { mutableStateOf(0) }
-    var currentQuestionIndex by remember { mutableStateOf(0) }
+    var questionsList by remember { mutableStateOf<List<Question>>(emptyList()) } // zoznam otazok
+    var nCorrect by remember { mutableStateOf(0) } //pocet spravne zodpovedanych otazok
+    var currentQuestionIndex by remember { mutableStateOf(0) } // index na ktrej otazke sa prave uzivatel nachadza
 
-    var showWelcomeMessage by remember { mutableStateOf(true) }
+    var showWelcomeMessage by remember { mutableStateOf(true) } // pomocny boolean pre zobrazenie welcome message
 
 
-    var remainingSeconds by remember { mutableStateOf(60*quiz.timeLimit) }
-    val totalMillis = quiz.timeLimit * 60 * 1000
-    var remainingMillis by remember { mutableStateOf(totalMillis) }
+    var remainingSeconds by remember { mutableStateOf(60*quiz.timeLimit) } // zostavajuci pocet sekund do konca kvizu ak je casomiera zapnuta
+    val totalMillis = quiz.timeLimit * 60 * 1000 //kolko sekund ma uzivatel na vyplnenie kvizu
+    var remainingMillis by remember { mutableStateOf(totalMillis) } // zostavajuce milisekundy
 
     LaunchedEffect(Unit) {
         questionRepository.getQuestions().collect { allQuestions ->
-            questionsList = allQuestions.filter { it.quizId == quiz.id }
+            questionsList = allQuestions.filter { it.quizId == quiz.id } // precitanie otazok z databazy ktore maju spravne quizId cez asynchronnu operaciu
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) { // asynchronna operacia na zobrazenie welcome message len na 2 sekundy a skoncenie kvizu aj kviz nema otazky
         delay(2000)
         showWelcomeMessage = false
         if (!questionsList.isNotEmpty()){
@@ -79,26 +79,19 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
     }
 
     if (quiz.timeLimitOn) {
-        LaunchedEffect(questionsList, showWelcomeMessage) {
-            if (!showWelcomeMessage && questionsList.isNotEmpty()) {
-                while (remainingSeconds > 0) {
-                    delay(1000)
-                    remainingSeconds--
-                }
-                val isPerfect = nCorrect == questionsList.size
-                statsRepository.updateStats(nCorrect, questionsList.size, isPerfect, quiz.id)
-                onDoneClick(nCorrect, questionsList.size)
-            }
-        }
-        LaunchedEffect(showWelcomeMessage, questionsList) {
+        LaunchedEffect(questionsList, showWelcomeMessage) { // asynchronna operacia na vypocet zostavajuceho casu
             if (!showWelcomeMessage && questionsList.isNotEmpty()) {
                 while (remainingMillis > 0) {
                     delay(10)
                     remainingMillis -= 10
                     if (remainingMillis < 0) remainingMillis = 0
                 }
+                val isPerfect = nCorrect == questionsList.size // ked cas dojde tak sa automaticky ukonci kviz a ulozia sa data
+                statsRepository.updateStats(nCorrect, questionsList.size, isPerfect, quiz.id)
+                onDoneClick(nCorrect, questionsList.size)
             }
         }
+
     }
 
     Box(
@@ -162,7 +155,7 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                 if (!showWelcomeMessage && questionsList.isNotEmpty()) {
                     val progress = (currentQuestionIndex + 1).toFloat() / questionsList.size.toFloat()
 
-                    LinearProgressIndicator(
+                    LinearProgressIndicator( // progress bar na zobrazenie kolko otazok je zodpovedanych a kolko zostava
                         progress = progress,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -175,7 +168,7 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                     if (quiz.timeLimitOn) {
                         val timeProgress = 1f - (remainingMillis.toFloat() / totalMillis.toFloat())
 
-                        LinearProgressIndicator(
+                        LinearProgressIndicator( // progress bar na zobrazenie zostavajuceho casu na vyplnenie
                             progress = timeProgress,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -190,7 +183,7 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
 
                 Spacer(modifier = Modifier.height(8.dp))
                 if (questionsList.isNotEmpty() && currentQuestionIndex < questionsList.size) {
-                    QuestionPanel(
+                    QuestionPanel(// logika na prechadzanie otazkami(pomocou questionPanel) a nasledne uozenie dat a vypnutie kvizu po vyplneni poslednej otazky
                         question = questionsList[currentQuestionIndex],
                         meno = quiz.title,
                         onAnswerSelected = { isCorrect ->
@@ -203,7 +196,7 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                             currentQuestionIndex += 1
                         }
                     )
-                } else if (questionsList.isNotEmpty()) {
+                } else if (questionsList.isNotEmpty()) { // prikazy ked sa kviz ukoncuje, ukladanie dat
                     onDoneClick(nCorrect, questionsList.size)
                     val isPerfect = nCorrect == questionsList.size
                     LaunchedEffect(Unit) {
@@ -231,18 +224,18 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
 
 @Composable
 fun QuestionPanel(question: Question, meno: String, onAnswerSelected: (Boolean) -> Unit){
-
-    var answers = remember (question) { mutableListOf(question.answer1, question.answer2, question.answer3, question.correctAnswer).filterNotNull().shuffled() }
-    var selectedAnswer by remember { mutableStateOf<String?>(null) }
+//funkcia na zobrazenie otazok kvizu pocas jeho prehravania
+    var answers = remember (question) { mutableListOf(question.answer1, question.answer2, question.answer3, question.correctAnswer).filterNotNull().shuffled() } //premenna na zapisanie odpovedi
+    var selectedAnswer by remember { mutableStateOf<String?>(null) } // premenna na zapisanie vybranej odpovede
 
     LaunchedEffect(question) {
         selectedAnswer = null
-    }
+    } // ked sa zmeni otazka tak sa vynuluje vybrana otazka
 
-    LaunchedEffect(selectedAnswer) {
+    LaunchedEffect(selectedAnswer) { // ked sa vyberie otazka tak sa spusti onAnswerSelected s oneskorenim jednej sekundy aby si hrac stihol pozret UI ci odpovedal spravne
         if (selectedAnswer != null) {
             delay(1000)
-            onAnswerSelected(selectedAnswer == question.correctAnswer)
+            onAnswerSelected(selectedAnswer == question.correctAnswer) // vyvolanie onAnswerSelected de sa podava Boolean hodnota ci je vybrata odpoved zhodna s spravnou odpovedou otazky
         }
     }
 
@@ -268,10 +261,10 @@ fun QuestionPanel(question: Question, meno: String, onAnswerSelected: (Boolean) 
                 .padding(bottom = 16.dp)
         )
 
-        if (answers.isEmpty()) {
+        if (answers.isEmpty()) { // logika na spravovanie otazky ktora nema odpoved
             Text("Táto otázka nemá odpovede.")
         } else {
-            answers.chunked(2).forEach { pair ->
+            answers.chunked(2).forEach { pair -> // parovanie odpovedi do dvojic a ich zobrazovanie vedla seba
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -295,18 +288,18 @@ fun QuestionPanel(question: Question, meno: String, onAnswerSelected: (Boolean) 
 
 @Composable
 fun AnswerCard(answer: String, modifier: Modifier = Modifier, correctAnswer: String, selectedAnswer: String?, onClick: () -> Unit) {
-    val backgroundColor = when {
+    val backgroundColor = when { // premenna na spravovanie vyfarbenia odpovedovej karty na zaklade toho ci je zvolena a je spravne alebo nie
         selectedAnswer == null -> Color.White
         answer == correctAnswer && selectedAnswer == answer -> Color(0xFFAAF683)
         selectedAnswer == answer -> Color(0xFFFF8C94)
         else -> Color.White
     }
-
+            // AnswerCard je funkcia na zobrazenie jednej odpovede ako Card a jej zmeny pri jej stlaceni
     Card(
         modifier = modifier
             .heightIn(min = 64.dp, max = 400.dp)
             .fillMaxWidth()
-            .clickable(enabled = selectedAnswer == null) { onClick() },
+            .clickable(enabled = selectedAnswer == null) { onClick() }, // odpoved je kliknutelna a vyvolava zmenu farby pri kliknuti a nasledne onClick ktorý vyvolá hodnotenie odpovede
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
         ),

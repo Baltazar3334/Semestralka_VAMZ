@@ -30,8 +30,8 @@ import com.example.semestralka_vamz.data.database.entity.Quiz
 
 @Composable
 fun FinishedQuizScreen(correctAnswers: Int? = null, totalQuestions: Int? = null, onRetryClick: (Quiz?) -> Unit, onHomeClick: () -> Unit, playedQuiz: Quiz? = null) {
-
-        var percentage = 0
+//obrazovka FinishedQuizScreen sluzi na zobrazenie informacii o kvize po jeho dokonceni, vyvolava sa ked uzivatel vyplni poslednu otazku alebo dojde casomiera
+        var percentage = 0 // vypocet dat pred zobrazenim
         if (totalQuestions != null && correctAnswers != null) {
             percentage = if (totalQuestions > 0) {
                 (correctAnswers * 100) / totalQuestions
@@ -63,7 +63,7 @@ fun FinishedQuizScreen(correctAnswers: Int? = null, totalQuestions: Int? = null,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text(text = "Správne odpovede: $correctAnswers z $totalQuestions")
+                    Text(text = "Správne odpovede: $correctAnswers z $totalQuestions") // zobrazenie vysledkov
                     Text(text = "Úspešnosť: $percentage%", fontWeight = FontWeight.Medium)
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -87,7 +87,7 @@ fun FinishedQuizScreen(correctAnswers: Int? = null, totalQuestions: Int? = null,
             }
         }
 
-        BackHandler {
+        BackHandler { // bakchandler na vracanie sa z obrazovky
             onHomeClick()
         }
 

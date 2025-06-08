@@ -64,49 +64,49 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageClick: () -> Unit, onHomeClickNoPopUp: () -> Unit) {
-    var quizName by remember { mutableStateOf("") }
-    var timeLimit by remember { mutableStateOf(0f) }
-    val keyboardController = LocalSoftwareKeyboardController.current
-    var isTimeLimitEnabled by remember { mutableStateOf(false) }
-    val questions2 = remember { mutableStateListOf<QuestionData>() }
+    // obrazovka pre vytvaranie kvizov alebo upravu kvizov, hodnoty kvizu sa ukladaju ako premenne a nasledne sa nahravaju do databazy v celku
+    var quizName by remember { mutableStateOf("") } //meno kvizu
+    var timeLimit by remember { mutableStateOf(0f) } // casove obmedzenie kvizu
+    val keyboardController = LocalSoftwareKeyboardController.current // ovladac pre klavesnicu, aby sa dala otvorit
+    var isTimeLimitEnabled by remember { mutableStateOf(false) } // hodnota ci je kviz casovo obmedzeny
+    val questions2 = remember { mutableStateListOf<QuestionData>() } // zoznam otazok tohto kvizu
 
-    var existingQuiz = existingQuiz
-    var existingQuizQuestions by remember { mutableStateOf<List<Question>>(emptyList()) }
+    var existingQuizQuestions by remember { mutableStateOf<List<Question>>(emptyList()) } // zoznam otazok ak je obrazovka nacitana uz s existujucim kvizom
 
-    val context = LocalContext.current
+    val context = LocalContext.current // pristup do databazy kvizov a otazok
     val db = AppDatabase.getDatabase(context)
     val quizRepository = QuizRepository(db.quizDao())
     val questionRepository = QuestionRepository(db.questionDao())
 
 
 
-    BackHandler {
+    BackHandler { //backhandler aby aplikacia vedela co ma robit ked je stlacene back na telefone
         onHomeClick()
     }
 
 
-    if (existingQuiz != null) {
-        println("načítal sa quiz")
-        quizName = existingQuiz.title
-        timeLimit = existingQuiz.timeLimit.toFloat()
-        isTimeLimitEnabled = existingQuiz.timeLimitOn
 
-        LaunchedEffect(Unit) {
-            if (existingQuiz != null) {
-                questionRepository.getQuestions()
-                    .take(1)
+
+        LaunchedEffect(Unit) { // asynchronna operacia na spustenie kodu ktory intereaguje s databazou
+            if (existingQuiz != null) { // ak bola funkcia volana na upravenie nejakeho kvizu tak sa data na obrazovke automaticky vyplnia
+                println("načítal sa quiz")
+                quizName = existingQuiz.title
+                timeLimit = existingQuiz.timeLimit.toFloat()
+                isTimeLimitEnabled = existingQuiz.timeLimitOn
+                questionRepository.getQuestions() // vyberie otazky z databazy ako entity Question
+                    .take(1) // zoberie len prvu emisiu flow a potom sa vypne
                     .collect { allQuestions ->
-                        existingQuizQuestions = allQuestions.filter { it.quizId == existingQuiz.id }
+                        existingQuizQuestions = allQuestions.filter { it.quizId == existingQuiz.id } //filtruje otazky len tie ktore maju QuizId rovnake ako id kvizu z parametrov
 
                         questions2.clear()
                         for (question in existingQuizQuestions) {
-                            val answersList = mutableStateListOf<String>().apply {
+                            val answersList = mutableStateListOf<String>().apply { // pre kazdu otazku sa vytvori zoznam odpovedi
                                 question.answer1?.let { add(it) }
                                 question.answer2?.let { add(it) }
                                 question.answer3?.let { add(it) }
                             }
 
-                            questions2.add(
+                            questions2.add( // nasledne sa otazky aj s odpovedami nahraju do zoznamu questions2 teraz uz ako QuestionData data class instancie
                                 QuestionData(
                                     title = "Otázka " + questions2.size.toString(),
                                     question = mutableStateOf(question.question),
@@ -120,7 +120,7 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                     }
             }
         }
-    }
+
 
     Box(
         modifier = Modifier
@@ -163,7 +163,7 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                     horizontalArrangement = Arrangement.Start,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Switch(
+                    Switch( // tlacidlo pre zobrazenie posuvnika pre casove obmedzenie, zaroven tlacidlo zmeni hodnotu ci je viz casovo obmedzeny
                         checked = isTimeLimitEnabled,
                         onCheckedChange = { isTimeLimitEnabled = it },
                         colors = SwitchDefaults.colors(
@@ -180,9 +180,9 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
 
                 }
 
-                if (isTimeLimitEnabled) {
+                if (isTimeLimitEnabled) { //logika pre zobrazovanie posuvnika pre casove obmedzenie
                     Column {
-                        Text("minút")
+                        Text("${timeLimit.toInt()} min")
                         Slider(
                             value = timeLimit,
                             onValueChange = { timeLimit = it },
@@ -216,7 +216,7 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                IconButton(onClick = {
+                                IconButton(onClick = { //tlacidlo na pridanie otazky do kvizu
                                     questions2.add(QuestionData(title = "Otázka ${questions2.size + 1}"))
 
                                 }) {
@@ -227,13 +227,13 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                                     modifier = Modifier.weight(1f),
                                     textAlign = TextAlign.Start
                                 )
-                                if(existingQuiz != null) {
-                                    IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch {
-                                        saveQuizAndQuestions(
+                                if(existingQuiz != null) { // if podmienka pre to ci sa ma vytvorit novy kviz alebo len upravit uz existujuci kviz, spravuje to nepovinnym parametrom
+                                    IconButton(onClick = { CoroutineScope(Dispatchers.IO).launch { //tlacidlo na ulozenie kvizu do databazy vyvola funkciu saveQuizAndQuestions
+                                        saveQuizAndQuestions(                                      // tlacidlo vyvolava coroutine ktora spravuje interakcie medzi databazou a funkciou cez Dispatcher.IO
                                             quizName, timeLimit, isTimeLimitEnabled,
                                             questions2, quizRepository, questionRepository, false, existingQuiz
                                         )
-                                        onHomeClickNoPopUp()
+                                        onHomeClickNoPopUp() // nasledne sa obrazovka zmeni na uvodne menu
                                     } } ) {
                                         Icon(Icons.Default.Send, contentDescription = "Finish quiz")
                                     }
@@ -254,7 +254,7 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                         }
                     }
 
-                    questions2.forEachIndexed { index, data ->
+                    questions2.forEachIndexed { index, data -> //zobrazenie otazok na UI pomocou funkcie QuestionItem
                         QuestionItem(
                             data = data,
                             onRemove = { questions2.removeAt(index) }
@@ -269,7 +269,7 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
         ) {
-            BottomNavigationBar(
+            BottomNavigationBar( //vytvorenie bottomNavigationBaru
                 onEditClick = onEditClick,
                 onHomeClick = onHomeClick,
                 onStorageClick = onStorageClick
@@ -283,11 +283,11 @@ fun QuestionItem(
         data: QuestionData,
         onRemove: () -> Unit
 ) {
+    //funkcia QuestionItem sluzi na zobrazenie jednotlivych otazok na obrazovke a ich upravu
+    val keyboardController = LocalSoftwareKeyboardController.current // zobrazovanie klavesnice
+    var isExpanded by remember { mutableStateOf(false) } // tato composable funkcia ma dva stadia: rozsirena a nerozsirena pre jednoduchsie zobrazovanie velkeho mnozstva otazok
 
-    val keyboardController = LocalSoftwareKeyboardController.current
-    var isExpanded by remember { mutableStateOf(false) }
-
-    if (!isExpanded) {
+    if (!isExpanded) { //ked neni rozsirena
         Card(
             modifier = Modifier.
             fillMaxWidth()
@@ -313,7 +313,7 @@ fun QuestionItem(
                 }
             }
         }
-    } else {
+    } else { // ked je rozsirena
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -412,7 +412,7 @@ fun QuestionItem(
                 Row(
 
                 ){
-                    IconButton(onClick = {
+                    IconButton(onClick = { // tlacidlo na pridavanie odpovedi, maximalne 4 odpovede
                         if (data.answers.size < 3){
                             data.answers.add("")
                         } else {
@@ -445,6 +445,7 @@ suspend fun saveQuizAndQuestions(
     favourite: Boolean,
     existingQuiz: Quiz? = null
 ) {
+    //funkcia sluzi na ulozenie dat kvizu do databazy, podla nepovinneho parametru sa rozhoduje ci musi najskor odstranit nejaky kviz a potom ho nahradit alebo ci len pridava novy kviz do DB
     if (existingQuiz != null) {
         quizRepository.deleteQuizById(existingQuiz.id)
     }
@@ -470,7 +471,7 @@ suspend fun saveQuizAndQuestions(
 
 
 
-data class QuestionData(
+data class QuestionData( //data class pre otazky v tomto screene pouziva sa pre jednoduchsie upravovanie dat kvizu pred nahratim do DB
     var title: String = "",
     var question: MutableState<String> = mutableStateOf(""),
     var correctAnswer: MutableState<String> = mutableStateOf(""),
