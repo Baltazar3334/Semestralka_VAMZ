@@ -57,9 +57,12 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
     var nCorrect by remember { mutableStateOf(0) }
     var currentQuestionIndex by remember { mutableStateOf(0) }
 
-
     var showWelcomeMessage by remember { mutableStateOf(true) }
-    var remainingTime by remember { mutableStateOf(60*quiz.timeLimit) }
+
+
+    var remainingSeconds by remember { mutableStateOf(60*quiz.timeLimit) }
+    val totalMillis = quiz.timeLimit * 60 * 1000
+    var remainingMillis by remember { mutableStateOf(totalMillis) }
 
     LaunchedEffect(Unit) {
         questionRepository.getQuestions().collect { allQuestions ->
@@ -78,13 +81,22 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
     if (quiz.timeLimitOn) {
         LaunchedEffect(questionsList, showWelcomeMessage) {
             if (!showWelcomeMessage && questionsList.isNotEmpty()) {
-                while (remainingTime > 0) {
+                while (remainingSeconds > 0) {
                     delay(1000)
-                    remainingTime--
+                    remainingSeconds--
                 }
                 val isPerfect = nCorrect == questionsList.size
                 statsRepository.updateStats(nCorrect, questionsList.size, isPerfect, quiz.id)
                 onDoneClick(nCorrect, questionsList.size)
+            }
+        }
+        LaunchedEffect(showWelcomeMessage, questionsList) {
+            if (!showWelcomeMessage && questionsList.isNotEmpty()) {
+                while (remainingMillis > 0) {
+                    delay(10)
+                    remainingMillis -= 10
+                    if (remainingMillis < 0) remainingMillis = 0
+                }
             }
         }
     }
@@ -144,6 +156,9 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                     .padding(16.dp)
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Späť")
+                }
                 if (!showWelcomeMessage && questionsList.isNotEmpty()) {
                     val progress = (currentQuestionIndex + 1).toFloat() / questionsList.size.toFloat()
 
@@ -157,11 +172,22 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
                         trackColor = Color.LightGray
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+                    if (quiz.timeLimitOn) {
+                        val timeProgress = 1f - (remainingMillis.toFloat() / totalMillis.toFloat())
+
+                        LinearProgressIndicator(
+                            progress = timeProgress,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = Color.Red,
+                            trackColor = Color.LightGray
+                        )
+                    }
                 }
 
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Späť")
-                }
+
                 Spacer(modifier = Modifier.height(8.dp))
                 if (questionsList.isNotEmpty() && currentQuestionIndex < questionsList.size) {
                     QuestionPanel(
