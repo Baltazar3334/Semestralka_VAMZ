@@ -59,7 +59,7 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
 
 
     var showWelcomeMessage by remember { mutableStateOf(true) }
-
+    var remainingTime by remember { mutableStateOf(60*quiz.timeLimit) }
 
     LaunchedEffect(Unit) {
         questionRepository.getQuestions().collect { allQuestions ->
@@ -75,6 +75,20 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
         }
     }
 
+    if (quiz.timeLimitOn) {
+        LaunchedEffect(questionsList, showWelcomeMessage) {
+            if (!showWelcomeMessage && questionsList.isNotEmpty()) {
+                while (remainingTime > 0) {
+                    delay(1000)
+                    remainingTime--
+                }
+                val isPerfect = nCorrect == questionsList.size
+                statsRepository.updateStats(nCorrect, questionsList.size, isPerfect, quiz.id)
+                onDoneClick(nCorrect, questionsList.size)
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -87,11 +101,34 @@ fun PlayQuizScreen(onEditClick: () -> Unit, onHomeClick: () -> Unit, onStorageCl
             ) {
                 if (questionsList.isNotEmpty())
                 {
-                    Text(
-                        text = "Veľa šťastia!",
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (quiz.timeLimitOn) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Veľa šťastia!",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(28.dp))
+                            Text(
+                                text = "Na kvíz máte ${quiz.timeLimit}m",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                    } else {
+                        Text(
+                            text = "Veľa šťastia!",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
                 }else{
                     Text(
                         text = "Tento Kvíz nemá žiadne otázky...",
