@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.semestralka_vamz.data.database.entity.Question
 import com.example.semestralka_vamz.data.database.entity.Quiz
 import com.example.semestralka_vamz.data.database.entity.UserStats
-
+//definovanie room databazy ako singleton
 @Database(entities = [Quiz::class, Question::class, UserStats::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun quizDao(): QuizDao
@@ -15,7 +15,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userStatsDao(): UserStatsDao
 
     companion object {
-        @Volatile
+        @Volatile // umoznuje pristup k Instance vo všetkych vlaknach
         private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase {

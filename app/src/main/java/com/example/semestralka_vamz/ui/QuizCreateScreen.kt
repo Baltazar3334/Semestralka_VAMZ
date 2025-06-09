@@ -84,11 +84,11 @@ fun CreateQuizScreen(existingQuiz: Quiz? = null, onEditClick: () -> Unit, onHome
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) } // premenna na zapisanie obrazku
 
     val contentResolver = context.contentResolver // na pristup k obsahu zariadenia(obrazkom ku ktorým pristupuje aplikacia)
-    val imagePicker = rememberLauncherForActivityResult( //image picker je launcher na vybratie obrazku
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri -> //Uri je odkaz na obrazok v zariadeni
+    val imagePicker = rememberLauncherForActivityResult( //nastroj na spustenie externej aktivity(vyber obrazku)
+        contract = ActivityResultContracts.PickVisualMedia() //launcher ma vyberat visualMedia
+    ) { uri -> //Uri je odkaz na obrazok v zariadeni tu sa vyberá
         uri?.let {
-            contentResolver.takePersistableUriPermission( // ziada pristup k obrazkom zariadenia pred ulozenim obrazku do premennej
+            contentResolver.takePersistableUriPermission( // ziada pristup k obrazkom na trvale pouzivanie
                 it,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
